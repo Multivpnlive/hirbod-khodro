@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { LayoutDashboard, Car, Users, Wallet, FileBarChart, User, LogOut } from "lucide-react";
@@ -123,11 +123,7 @@ export function Stat({ label, value, tone }: { label: string; value: string; ton
 
 export function AdminOnly({ children }: { children: ReactNode }) {
   const { data: me, isLoading } = useMe();
-  const navigate = useNavigate();
   if (isLoading) return <div className="text-muted-foreground">در حال بارگذاری…</div>;
-  if (!me?.isAdmin) {
-    navigate({ to: "/my", replace: true });
-    return null;
-  }
+  if (!me?.isAdmin) return <Navigate to="/my" replace />;
   return <>{children}</>;
 }
