@@ -14,16 +14,283 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      car_expenses: {
+        Row: {
+          amount: number
+          car_id: string
+          created_at: string
+          expense_date: string
+          id: string
+          is_demo: boolean
+          title: string
+        }
+        Insert: {
+          amount?: number
+          car_id: string
+          created_at?: string
+          expense_date?: string
+          id?: string
+          is_demo?: boolean
+          title: string
+        }
+        Update: {
+          amount?: number
+          car_id?: string
+          created_at?: string
+          expense_date?: string
+          id?: string
+          is_demo?: boolean
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_expenses_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      car_investments: {
+        Row: {
+          amount: number
+          car_id: string
+          created_at: string
+          id: string
+          is_demo: boolean
+          partner_id: string
+        }
+        Insert: {
+          amount: number
+          car_id: string
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          partner_id: string
+        }
+        Update: {
+          amount?: number
+          car_id?: string
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          partner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_investments_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_investments_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cars: {
+        Row: {
+          brand: string
+          color: string | null
+          created_at: string
+          id: string
+          is_demo: boolean
+          model: string
+          notes: string | null
+          plate: string | null
+          purchase_date: string
+          purchase_price: number
+          sale_date: string | null
+          sale_price: number | null
+          status: Database["public"]["Enums"]["car_status"]
+          year: number | null
+        }
+        Insert: {
+          brand: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          model: string
+          notes?: string | null
+          plate?: string | null
+          purchase_date?: string
+          purchase_price?: number
+          sale_date?: string | null
+          sale_price?: number | null
+          status?: Database["public"]["Enums"]["car_status"]
+          year?: number | null
+        }
+        Update: {
+          brand?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_demo?: boolean
+          model?: string
+          notes?: string | null
+          plate?: string | null
+          purchase_date?: string
+          purchase_price?: number
+          sale_date?: string | null
+          sale_price?: number | null
+          status?: Database["public"]["Enums"]["car_status"]
+          year?: number | null
+        }
+        Relationships: []
+      }
+      partners: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          is_demo: boolean
+          name: string
+          phone: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_demo?: boolean
+          name: string
+          phone?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_demo?: boolean
+          name?: string
+          phone?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          car_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_demo: boolean
+          partner_id: string | null
+          txn_date: string
+          type: Database["public"]["Enums"]["txn_type"]
+        }
+        Insert: {
+          amount: number
+          car_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_demo?: boolean
+          partner_id?: string | null
+          txn_date?: string
+          type: Database["public"]["Enums"]["txn_type"]
+        }
+        Update: {
+          amount?: number
+          car_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_demo?: boolean
+          partner_id?: string | null
+          txn_date?: string
+          type?: Database["public"]["Enums"]["txn_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      my_car_shares: {
+        Args: never
+        Returns: {
+          car_id: string
+          my_investment: number
+          total_investment: number
+        }[]
+      }
+      my_partner_ids: { Args: never; Returns: string[] }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "partner"
+      car_status: "available" | "reserved" | "sold"
+      txn_type: "receipt" | "payment" | "expense" | "settlement"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +417,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "partner"],
+      car_status: ["available", "reserved", "sold"],
+      txn_type: ["receipt", "payment", "expense", "settlement"],
+    },
   },
 } as const
