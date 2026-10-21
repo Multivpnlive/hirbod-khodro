@@ -6,7 +6,7 @@ import { Plus, Link2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminOnly, PageHeader } from "@/components/AppShell";
 import { useAllData } from "@/lib/data";
-import { carProfit, partnerShare } from "@/lib/finance";
+import { partnerSummary } from "@/lib/summary";
 import { toman } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,25 +21,6 @@ export const Route = createFileRoute("/_authenticated/partners")({
     </AdminOnly>
   ),
 });
-
-export function partnerSummary(
-  pid: string,
-  d: Pick<ReturnType<typeof useAllData>, "cars" | "expenses" | "investments" | "txns">,
-) {
-  const mine = d.investments.filter((i) => i.partner_id === pid);
-  const capital = mine.reduce((a, i) => a + Number(i.amount), 0);
-  let profit = 0;
-  for (const inv of mine) {
-    const car = d.cars.find((c) => c.id === inv.car_id);
-    if (!car) continue;
-    const p = carProfit(car, d.expenses);
-    if (p === null) continue;
-    const total = d.investments.filter((i) => i.car_id === car.id).reduce((a, i) => a + Number(i.amount), 0);
-    profit += partnerShare(p, Number(inv.amount), total);
-  }
-  const settled = d.txns.filter((t) => t.partner_id === pid && t.type === "settlement").reduce((a, t) => a + Number(t.amount), 0);
-  return { capital, profit, settled, due: profit - settled, deals: mine.length };
-}
 
 function Partners() {
   const d = useAllData();

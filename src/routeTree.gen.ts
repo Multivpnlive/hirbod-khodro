@@ -14,6 +14,9 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedPartnersRouteImport } from './routes/_authenticated/partners'
+import { Route as AuthenticatedCarsIndexRouteImport } from './routes/_authenticated/cars.index'
+import { Route as AuthenticatedCarsIdRouteImport } from './routes/_authenticated/cars.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,18 +42,39 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPartnersRoute = AuthenticatedPartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCarsIndexRoute = AuthenticatedCarsIndexRouteImport.update({
+  id: '/cars/',
+  path: '/cars/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCarsIdRoute = AuthenticatedCarsIdRouteImport.update({
+  id: '/cars/$id',
+  path: '/cars/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/partners': typeof AuthenticatedPartnersRoute
+  '/cars/$id': typeof AuthenticatedCarsIdRoute
+  '/cars/': typeof AuthenticatedCarsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/partners': typeof AuthenticatedPartnersRoute
+  '/cars/$id': typeof AuthenticatedCarsIdRoute
+  '/cars': typeof AuthenticatedCarsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +83,29 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/partners': typeof AuthenticatedPartnersRoute
+  '/_authenticated/cars/$id': typeof AuthenticatedCarsIdRoute
+  '/_authenticated/cars/': typeof AuthenticatedCarsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/reset-password' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/dashboard'
+    | '/partners'
+    | '/cars/$id'
+    | '/cars/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/reset-password' | '/dashboard'
+  to:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/dashboard'
+    | '/partners'
+    | '/cars/$id'
+    | '/cars'
   id:
     | '__root__'
     | '/'
@@ -72,6 +113,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/_authenticated/dashboard'
+    | '/_authenticated/partners'
+    | '/_authenticated/cars/$id'
+    | '/_authenticated/cars/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -118,15 +162,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/partners': {
+      id: '/_authenticated/partners'
+      path: '/partners'
+      fullPath: '/partners'
+      preLoaderRoute: typeof AuthenticatedPartnersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cars/': {
+      id: '/_authenticated/cars/'
+      path: '/cars'
+      fullPath: '/cars/'
+      preLoaderRoute: typeof AuthenticatedCarsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cars/$id': {
+      id: '/_authenticated/cars/$id'
+      path: '/cars/$id'
+      fullPath: '/cars/$id'
+      preLoaderRoute: typeof AuthenticatedCarsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedPartnersRoute: typeof AuthenticatedPartnersRoute
+  AuthenticatedCarsIdRoute: typeof AuthenticatedCarsIdRoute
+  AuthenticatedCarsIndexRoute: typeof AuthenticatedCarsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedPartnersRoute: AuthenticatedPartnersRoute,
+  AuthenticatedCarsIdRoute: AuthenticatedCarsIdRoute,
+  AuthenticatedCarsIndexRoute: AuthenticatedCarsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
