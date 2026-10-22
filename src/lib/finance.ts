@@ -44,3 +44,35 @@ export type TxnLike = { type: "receipt" | "payment" | "expense" | "settlement"; 
 export function cashBalance(txns: TxnLike[]) {
   return txns.reduce((s, t) => s + (t.type === "receipt" ? n(t.amount) : -n(t.amount)), 0);
 }
+
+export type SettlementLike = { partner_id: string | null; car_id: string | null; type: string; amount: number };
+
+/**
+ * Per-partner ledger for one car. Cost = purchase price + expenses (partner capital
+ * funds that cost, so it is never added again). Due = own capital + profit/loss share
+ * minus settlements already paid to that partner for this car.
+ */
+export function carPartnerLedger(
+  car: CarLike,
+  expenses: ExpenseLike[],
+  investments: InvestmentLike[],
+  txns: SettlementLike[],
+) {
+  const invs = investments.filter((i) => i.car_id === car.id);
+  const profit = carProfit(car, expenses);
+  const total = invs.reduce((s, i) => s + n(i.amount), 0);
+  return invs.map((i) => {
+    const share = profit === null ? 0 : partnerShare(profit, n(i.amount), total);
+    const settled = txns
+      .filter((t) => t.type === "settlement" && t.car_id === car.id && t.partner_id === i.partner_id)
+      .reduce((s, t) => s + n(t.amount), 0);
+    return {
+      partner_id: i.partner_id,
+      capital: n(i.amount),
+      sharePct: total > 0 ? n(i.amount) / total : 0,
+      profit: share,
+      settled,
+      due: profit === null ? 0 : n(i.amount) + share - settled,
+    };
+  });
+}
