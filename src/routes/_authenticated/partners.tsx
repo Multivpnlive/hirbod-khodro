@@ -62,7 +62,7 @@ function AddPartner() {
       email: String(f.get("email") || "").trim() || null,
       phone: String(f.get("phone") || ""),
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("شریک اضافه شد");
     qc.invalidateQueries({ queryKey: ["all-data"] });
     setOpen(false);
