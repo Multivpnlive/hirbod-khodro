@@ -15,6 +15,13 @@
       "when": 1792658857780,
       "tag": "0001_revoke_anon_helpers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792661508412,
+      "tag": "0002_expense_description",
+      "breakpoints": true
     }
   ]
 }
