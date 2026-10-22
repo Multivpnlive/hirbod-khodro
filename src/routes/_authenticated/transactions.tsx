@@ -31,7 +31,7 @@ function Transactions() {
   async function del(id: string) {
     if (!confirm("حذف این تراکنش؟")) return;
     const { error } = await supabase.from("transactions").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["all-data"] });
   }
   return (
@@ -90,7 +90,7 @@ function AddTxn() {
       car_id: (f.get("car") as string) || null,
       description: String(f.get("description") || ""),
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("تراکنش ثبت شد");
     qc.invalidateQueries({ queryKey: ["all-data"] });
     setOpen(false);

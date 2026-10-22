@@ -38,7 +38,7 @@ function CarDetail() {
 
   async function run(p: PromiseLike<{ error: { message: string } | null }>, ok: string) {
     const { error } = await p;
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success(ok);
     refresh();
   }
@@ -86,7 +86,7 @@ function CarDetail() {
   async function removeCar() {
     if (!confirm("این خودرو و همه هزینه‌ها و سرمایه‌های آن حذف شود؟")) return;
     const { error } = await supabase.from("cars").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     refresh();
     navigate({ to: "/cars" });
   }

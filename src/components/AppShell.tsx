@@ -110,7 +110,7 @@ export function PageHeader({ title, action }: { title: string; action?: ReactNod
   );
 }
 
-export function Stat({ label, value, tone }: { label: string; value: string; tone?: "pos" | "neg" }) {
+export function Stat({ label, value, tone }: { label: string; value: string; tone?: "pos" | "neg" | undefined }) {
   return (
     <div className="card-elevated p-4">
       <div className="text-xs text-muted-foreground">{label}</div>

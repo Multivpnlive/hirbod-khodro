@@ -83,7 +83,7 @@ function AddCar() {
       purchase_date: String(f.get("purchase_date")),
       sale_date: (f.get("sale_date") as string) || null,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("خودرو ثبت شد");
     qc.invalidateQueries({ queryKey: ["all-data"] });
     setOpen(false);
