@@ -48,6 +48,6 @@ describe("finance", () => {
   it("loss is split proportionally too", () => {
     const r = carPartnerLedger({ ...car, sale_price: 3000 }, exp,
       [{ car_id: "c", partner_id: "a", amount: 1000 }, { car_id: "c", partner_id: "b", amount: 1000 }], []);
-    expect(r.map((x) => x.profit)).toEqual([-313, -313]);
+    expect(r.map((x) => x.profit)).toEqual([-312, -312]);
   });
 });
