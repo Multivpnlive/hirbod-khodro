@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DemoTag, Field, NativeSelect, StatusBadge, num } from "@/components/form-bits";
+import { FundingEditor, type ExpRow, type InvRow } from "@/components/FundingEditor";
 
 export const Route = createFileRoute("/_authenticated/cars/")({
   head: () => ({ meta: [{ title: "خودروها | هیربد خودرو" }] }),
@@ -67,11 +68,15 @@ function Cars() {
 function AddCar() {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
+  const { partners } = useAllData();
+  const [invs, setInvs] = useState<InvRow[]>([]);
+  const [exps, setExps] = useState<ExpRow[]>([]);
+  const [purchase, setPurchase] = useState(0);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const sale = num(f.get("sale_price"));
-    const { error } = await supabase.from("cars").insert({
+    const { data: newCar, error } = await supabase.from("cars").insert({
       brand: String(f.get("brand")),
       model: String(f.get("model")),
       year: num(f.get("year")) || null,
@@ -82,8 +87,18 @@ function AddCar() {
       status: f.get("status") as "available" | "reserved" | "sold",
       purchase_date: String(f.get("purchase_date")),
       sale_date: (f.get("sale_date") as string) || null,
-    });
-    if (error) { toast.error(error.message); return; }
+    }).select("id").single();
+    if (error || !newCar) { toast.error(error?.message ?? "خطا"); return; }
+    const invRows = invs.filter((r) => r.partner_id && num(r.amount) > 0)
+      .map((r) => ({ car_id: newCar.id, partner_id: r.partner_id, amount: num(r.amount) }));
+    const expRows = exps.filter((r) => r.title && num(r.amount) > 0)
+      .map((r) => ({ car_id: newCar.id, title: r.title, amount: num(r.amount), expense_date: r.date, description: r.description || null }));
+    const [a, b] = await Promise.all([
+      invRows.length ? supabase.from("car_investments").insert(invRows) : { error: null },
+      expRows.length ? supabase.from("car_expenses").insert(expRows) : { error: null },
+    ]);
+    if (a.error || b.error) toast.error((a.error || b.error)!.message);
+    setInvs([]); setExps([]);
     toast.success("خودرو ثبت شد");
     qc.invalidateQueries({ queryKey: ["all-data"] });
     setOpen(false);
@@ -101,7 +116,7 @@ function AddCar() {
           <Field label="سال ساخت"><Input name="year" inputMode="numeric" /></Field>
           <Field label="رنگ"><Input name="color" /></Field>
           <div className="col-span-2"><Field label="شماره پلاک"><Input name="plate" /></Field></div>
-          <Field label="قیمت خرید (تومان)"><Input name="purchase_price" inputMode="numeric" required /></Field>
+          <Field label="قیمت خرید (تومان)"><Input name="purchase_price" inputMode="numeric" required onChange={(e) => setPurchase(num(e.target.value))} /></Field>
           <Field label="تاریخ خرید"><Input name="purchase_date" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} /></Field>
           <Field label="قیمت فروش (تومان)"><Input name="sale_price" inputMode="numeric" /></Field>
           <Field label="تاریخ فروش"><Input name="sale_date" type="date" /></Field>
@@ -114,7 +129,7 @@ function AddCar() {
               </NativeSelect>
             </Field>
           </div>
-          <p className="col-span-2 text-xs text-muted-foreground">هزینه‌های جانبی و سرمایه شرکا را در صفحه همین خودرو اضافه کنید.</p>
+          <FundingEditor partners={partners.filter((p) => !p.is_demo)} invs={invs} setInvs={setInvs} exps={exps} setExps={setExps} purchase={purchase} />
           <Button className="col-span-2">ذخیره</Button>
         </form>
       </DialogContent>

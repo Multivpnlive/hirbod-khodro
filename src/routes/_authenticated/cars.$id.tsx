@@ -5,8 +5,8 @@ import { Trash2, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminOnly, Stat } from "@/components/AppShell";
 import { useAllData } from "@/lib/data";
-import { carCost, carExpensesTotal, carProfit, splitProfit } from "@/lib/finance";
-import { faDate, pct, toman } from "@/lib/format";
+import { carCost, carExpensesTotal, carPartnerLedger, carProfit } from "@/lib/finance";
+import { faDate, pct, toman, txnLabel } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DemoTag, Field, NativeSelect, StatusBadge, num } from "@/components/form-bits";
@@ -33,7 +33,9 @@ function CarDetail() {
   const exps = d.data!.expenses.filter((e) => e.car_id === id);
   const invs = d.data!.investments.filter((i) => i.car_id === id);
   const profit = carProfit(car, exps);
-  const split = splitProfit(profit ?? 0, invs);
+  const carTxns = d.data!.txns.filter((t) => t.car_id === id);
+  const ledger = carPartnerLedger(car, exps, invs, carTxns);
+  const capitalTotal = invs.reduce((a, i) => a + Number(i.amount), 0);
   const pName = (pid: string) => d.data!.partners.find((p) => p.id === pid)?.name ?? "—";
 
   async function run(p: PromiseLike<{ error: { message: string } | null }>, ok: string) {
@@ -63,7 +65,7 @@ function CarDetail() {
     const form = e.currentTarget;
     const f = new FormData(form);
     await run(
-      supabase.from("car_expenses").insert({ car_id: id, title: String(f.get("title")), amount: num(f.get("amount")), expense_date: String(f.get("date")), is_demo: car!.is_demo }),
+      supabase.from("car_expenses").insert({ car_id: id, title: String(f.get("title")), amount: num(f.get("amount")), expense_date: String(f.get("date")), description: String(f.get("description") || "") || null, is_demo: car!.is_demo }),
       "هزینه ثبت شد",
     );
     form.reset();
@@ -81,6 +83,37 @@ function CarDetail() {
       "سرمایه شریک ثبت شد",
     );
     form.reset();
+  }
+
+  async function addSettlement(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const f = new FormData(form);
+    await run(
+      supabase.from("transactions").insert({
+        type: f.get("type") as "settlement" | "payment",
+        partner_id: String(f.get("partner")),
+        car_id: id,
+        amount: num(f.get("amount")),
+        txn_date: String(f.get("date")),
+        description: String(f.get("description") || "") || null,
+        is_demo: car!.is_demo,
+      }),
+      "پرداخت ثبت شد",
+    );
+    form.reset();
+  }
+
+  function editExpense(ex: (typeof exps)[number]) {
+    const title = prompt("عنوان هزینه", ex.title); if (title === null) return;
+    const amount = prompt("مبلغ (تومان)", String(ex.amount)); if (amount === null) return;
+    const description = prompt("توضیح", ex.description ?? ""); if (description === null) return;
+    run(supabase.from("car_expenses").update({ title, amount: num(amount), description: description || null }).eq("id", ex.id), "هزینه ویرایش شد");
+  }
+
+  function editInvestment(invId: string, current: number) {
+    const amount = prompt("مبلغ سرمایه (تومان)", String(current)); if (amount === null) return;
+    run(supabase.from("car_investments").update({ amount: num(amount) }).eq("id", invId), "سرمایه ویرایش شد");
   }
 
   async function removeCar() {
@@ -128,24 +161,29 @@ function CarDetail() {
 
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="card-elevated p-4">
-          <div className="font-bold mb-3">سرمایه و سهم سود شرکا</div>
+          <div className="font-bold mb-1">سرمایه و سهم سود شرکا</div>
+          <div className="text-xs text-muted-foreground mb-3">مجموع سرمایه: {toman(capitalTotal)}</div>
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground"><tr><th className="text-start py-1">شریک</th><th className="text-start">سرمایه</th><th className="text-start">سهم</th><th className="text-start">سود</th><th /></tr></thead>
+            <thead className="text-xs text-muted-foreground"><tr><th className="text-start py-1">شریک</th><th className="text-start">سرمایه</th><th className="text-start">مشارکت</th><th className="text-start">سود/زیان</th><th className="text-start">تسویه‌شده</th><th className="text-start">مانده</th><th /></tr></thead>
             <tbody className="divide-y">
-              {split.map((s) => {
+              {ledger.map((s) => {
                 const inv = invs.find((i) => i.partner_id === s.partner_id)!;
                 return (
                   <tr key={s.partner_id}>
                     <td className="py-2">{pName(s.partner_id)}</td>
-                    <td>{toman(s.amount)}</td>
+                    <td><button className="underline decoration-dotted" onClick={() => editInvestment(inv.id, s.capital)}>{toman(s.capital)}</button></td>
                     <td>{pct(s.sharePct)}</td>
                     <td className={s.profit >= 0 ? "text-success" : "text-destructive"}>{profit === null ? "—" : toman(s.profit)}</td>
-                    <td><button onClick={() => run(supabase.from("car_investments").delete().eq("id", inv.id), "حذف شد")}><Trash2 className="size-3.5 text-muted-foreground" /></button></td>
+                    <td>{toman(s.settled)}</td>
+                    <td className="font-bold">{profit === null ? "—" : toman(s.due)}</td>
+                    <td><button aria-label="حذف" onClick={() => run(supabase.from("car_investments").delete().eq("id", inv.id), "حذف شد")}><Trash2 className="size-3.5 text-muted-foreground" /></button></td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          </div>
           {invs.length === 0 && <div className="text-sm text-muted-foreground py-2">هنوز سرمایه‌ای ثبت نشده.</div>}
           <form onSubmit={addInvestment} className="grid grid-cols-[1fr_1fr_auto] gap-2 mt-4">
             <NativeSelect name="partner" required>
@@ -153,16 +191,18 @@ function CarDetail() {
               {d.partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </NativeSelect>
             <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
-            <Button size="sm">افزودن</Button>
+            <Button size="sm">افزودن / ویرایش</Button>
           </form>
+          <div className="text-[11px] text-muted-foreground mt-1">مانده = سرمایه + سهم سود یا زیان − تسویه‌های همین خودرو. برای ویرایش سرمایه روی مبلغ بزنید.</div>
         </div>
 
         <div className="card-elevated p-4">
-          <div className="font-bold mb-3">هزینه‌های جانبی</div>
+          <div className="font-bold mb-1">هزینه‌های جانبی</div>
+          <div className="text-xs text-muted-foreground mb-3">مجموع هزینه‌ها: {toman(carExpensesTotal(id, exps))}</div>
           <div className="divide-y">
             {exps.map((e) => (
               <div key={e.id} className="flex items-center justify-between py-2 text-sm">
-                <span>{e.title} <span className="text-xs text-muted-foreground">{faDate(e.expense_date)}</span></span>
+                <button className="text-start" onClick={() => editExpense(e)}>{e.title} <span className="text-xs text-muted-foreground">{faDate(e.expense_date)}</span>{e.description && <div className="text-xs text-muted-foreground">{e.description}</div>}</button>
                 <span className="flex items-center gap-2">{toman(e.amount)}
                   <button onClick={() => run(supabase.from("car_expenses").delete().eq("id", e.id), "حذف شد")}><Trash2 className="size-3.5 text-muted-foreground" /></button>
                 </span>
@@ -173,9 +213,37 @@ function CarDetail() {
             <Input name="title" placeholder="عنوان هزینه" required />
             <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
             <Input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
-            <Button size="sm">افزودن هزینه</Button>
+            <Input name="description" placeholder="توضیح" />
+            <Button size="sm" className="col-span-2">افزودن هزینه</Button>
           </form>
         </div>
+      </div>
+
+      <div className="card-elevated p-4">
+        <div className="font-bold mb-3">پرداخت‌ها و تسویه با شرکا (سابقه)</div>
+        <div className="divide-y text-sm">
+          {carTxns.map((t) => (
+            <div key={t.id} className="flex justify-between py-2">
+              <span>{txnLabel[t.type]} · {t.partner_id ? pName(t.partner_id) : "—"} <span className="text-xs text-muted-foreground">{faDate(t.txn_date)} {t.description}</span></span>
+              <span>{toman(t.amount)}</span>
+            </div>
+          ))}
+          {carTxns.length === 0 && <div className="text-muted-foreground py-2">هنوز پرداختی ثبت نشده.</div>}
+        </div>
+        <form onSubmit={addSettlement} className="grid grid-cols-2 md:grid-cols-6 gap-2 mt-4">
+          <NativeSelect name="partner" required>
+            <option value="">شریک</option>
+            {invs.map((i) => <option key={i.partner_id} value={i.partner_id}>{pName(i.partner_id)}</option>)}
+          </NativeSelect>
+          <NativeSelect name="type" defaultValue="settlement">
+            <option value="settlement">تسویه شریک</option>
+            <option value="payment">پرداخت</option>
+          </NativeSelect>
+          <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
+          <Input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+          <Input name="description" placeholder="توضیح" />
+          <Button size="sm">ثبت</Button>
+        </form>
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ export type Database = {
           amount: number
           car_id: string
           created_at: string
+          description: string | null
           expense_date: string
           id: string
           is_demo: boolean
@@ -28,6 +29,7 @@ export type Database = {
           amount?: number
           car_id: string
           created_at?: string
+          description?: string | null
           expense_date?: string
           id?: string
           is_demo?: boolean
@@ -37,6 +39,7 @@ export type Database = {
           amount?: number
           car_id?: string
           created_at?: string
+          description?: string | null
           expense_date?: string
           id?: string
           is_demo?: boolean

@@ -1,0 +1,1 @@
+ALTER TABLE public.car_expenses ADD COLUMN IF NOT EXISTS description text;
