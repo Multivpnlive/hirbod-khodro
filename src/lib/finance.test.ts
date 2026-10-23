@@ -43,7 +43,7 @@ describe("finance", () => {
       [{ type: "settlement", car_id: "c", partner_id: "a", amount: 1000 }, { type: "settlement", car_id: "x", partner_id: "b", amount: 50 }]);
     expect(r.map((x) => x.profit)).toEqual([356, 119]);
     expect(r.map((x) => x.due)).toEqual([2356, 1119]);
-    expect(r[0].sharePct).toBe(0.75);
+    expect(r[0]!.sharePct).toBe(0.75);
   });
   it("loss is split proportionally too", () => {
     const r = carPartnerLedger({ ...car, sale_price: 3000 }, exp,
