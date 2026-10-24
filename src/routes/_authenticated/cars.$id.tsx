@@ -77,6 +77,8 @@ function CarDetail() {
     e.preventDefault();
     const form = e.currentTarget;
     const f = new FormData(form);
+    if (!f.get("partner")) { toast.error("لطفاً شریک را انتخاب کنید"); return; }
+    if (num(f.get("amount")) <= 0) { toast.error("مبلغ سرمایه معتبر نیست"); return; }
     await run(
       supabase.from("car_investments").upsert(
         { car_id: id, partner_id: String(f.get("partner")), amount: num(f.get("amount")), is_demo: car!.is_demo },
@@ -91,6 +93,8 @@ function CarDetail() {
     e.preventDefault();
     const form = e.currentTarget;
     const f = new FormData(form);
+    if (!f.get("partner")) { toast.error("لطفاً شریک را انتخاب کنید"); return; }
+    if (num(f.get("amount")) <= 0) { toast.error("مبلغ پرداخت معتبر نیست"); return; }
     await run(
       supabase.from("transactions").insert({
         type: f.get("type") as "settlement" | "payment",
