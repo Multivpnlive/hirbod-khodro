@@ -165,26 +165,37 @@ function CarDetail() {
         <div className="card-elevated p-4">
           <div className="font-bold mb-1">سرمایه و سهم سود شرکا</div>
           <div className="text-xs text-muted-foreground mb-3">مجموع سرمایه: {toman(capitalTotal)}</div>
-          <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground"><tr><th className="text-start py-1">شریک</th><th className="text-start">سرمایه</th><th className="text-start">مشارکت</th><th className="text-start">سود/زیان</th><th className="text-start">تسویه‌شده</th><th className="text-start">مانده</th><th /></tr></thead>
-            <tbody className="divide-y">
-              {ledger.map((s) => {
-                const inv = invs.find((i) => i.partner_id === s.partner_id)!;
-                return (
-                  <tr key={s.partner_id}>
-                    <td className="py-2">{pName(s.partner_id)}</td>
-                    <td><button className="underline decoration-dotted" onClick={() => editInvestment(inv.id, s.capital)}>{toman(s.capital)}</button></td>
-                    <td>{pct(s.sharePct)}</td>
-                    <td className={s.profit >= 0 ? "text-success" : "text-destructive"}>{profit === null ? "—" : toman(s.profit)}</td>
-                    <td>{toman(s.settled)}</td>
-                    <td className="font-bold">{profit === null ? "—" : toman(s.due)}</td>
-                    <td><button aria-label="حذف" onClick={() => run(supabase.from("car_investments").delete().eq("id", inv.id), "حذف شد")}><Trash2 className="size-3.5 text-muted-foreground" /></button></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {ledger.map((s) => {
+              const inv = invs.find((i) => i.partner_id === s.partner_id)!;
+              const Row = ({ label, value, className }: { label: string; value: string; className?: string }) => (
+                <div className="flex items-center justify-between gap-3 py-1">
+                  <span className="text-xs text-muted-foreground shrink-0">{label}</span>
+                  <span className={`whitespace-nowrap text-sm ${className ?? ""}`}>{value}</span>
+                </div>
+              );
+              return (
+                <div key={s.partner_id} className="rounded-lg border p-3">
+                  <div className="flex items-center justify-between gap-2 border-b pb-2 mb-1">
+                    <span className="font-bold truncate">{pName(s.partner_id)}</span>
+                    <button aria-label="حذف شریک" className="shrink-0 p-1" onClick={() => run(supabase.from("car_investments").delete().eq("id", inv.id), "حذف شد")}>
+                      <Trash2 className="size-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 py-1">
+                    <span className="text-xs text-muted-foreground shrink-0">سرمایه</span>
+                    <button className="whitespace-nowrap text-sm underline decoration-dotted" onClick={() => editInvestment(inv.id, s.capital)}>{toman(s.capital)}</button>
+                  </div>
+                  <Row label="درصد مشارکت" value={pct(s.sharePct)} />
+                  <Row label="سهم سود/زیان" value={profit === null ? "—" : `${s.profit > 0 ? "+" : ""}${toman(s.profit)}`} className={s.profit >= 0 ? "text-success" : "text-destructive"} />
+                  <Row label="تسویه‌شده" value={toman(s.settled)} />
+                  <div className="flex items-center justify-between gap-3 border-t mt-1 pt-2">
+                    <span className="text-xs font-bold shrink-0">مانده قابل پرداخت</span>
+                    <span className="whitespace-nowrap font-extrabold">{profit === null ? "—" : toman(s.due)}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
           {invs.length === 0 && <div className="text-sm text-muted-foreground py-2">هنوز سرمایه‌ای ثبت نشده.</div>}
           <form onSubmit={addInvestment} className="grid grid-cols-[1fr_1fr_auto] gap-2 mt-4">
