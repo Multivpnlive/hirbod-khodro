@@ -10,6 +10,8 @@ import { faDate, pct, toman, txnLabel } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DemoTag, Field, NativeSelect, StatusBadge, num } from "@/components/form-bits";
+import { JalaliDateField } from "@/components/JalaliDateField";
+import { todayIso } from "@/lib/jalali";
 
 export const Route = createFileRoute("/_authenticated/cars/$id")({
   head: () => ({ meta: [{ title: "جزئیات خودرو | هیربد خودرو" }] }),
@@ -155,7 +157,7 @@ function CarDetail() {
         </Field>
         <Field label="قیمت خرید"><Input name="purchase_price" defaultValue={car.purchase_price} inputMode="numeric" /></Field>
         <Field label="قیمت فروش"><Input name="sale_price" defaultValue={car.sale_price ?? ""} inputMode="numeric" /></Field>
-        <Field label="تاریخ فروش"><Input name="sale_date" type="date" defaultValue={car.sale_date ?? ""} /></Field>
+        <Field label="تاریخ فروش"><JalaliDateField name="sale_date" defaultValue={car.sale_date ?? ""} key={car.id + (car.sale_date ?? "")} /></Field>
         <Button>ذخیره معامله</Button>
       </form>
 
@@ -212,7 +214,7 @@ function CarDetail() {
           <form onSubmit={addExpense} className="grid grid-cols-2 gap-2 mt-4">
             <Input name="title" placeholder="عنوان هزینه" required />
             <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
-            <Input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+            <JalaliDateField name="date" defaultValue={todayIso()} />
             <Input name="description" placeholder="توضیح" />
             <Button size="sm" className="col-span-2">افزودن هزینه</Button>
           </form>
@@ -240,7 +242,7 @@ function CarDetail() {
             <option value="payment">پرداخت</option>
           </NativeSelect>
           <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
-          <Input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+          <JalaliDateField name="date" defaultValue={todayIso()} />
           <Input name="description" placeholder="توضیح" />
           <Button size="sm">ثبت</Button>
         </form>
