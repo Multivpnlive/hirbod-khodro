@@ -1,6 +1,6 @@
 // تبدیل تاریخ میلادی ↔ هجری شمسی بر پایه کتابخانه jalaali-js
 // (همه توابع با اعداد صحیح کار می‌کنند و به منطقه زمانی وابسته نیستند)
-import jalaali from "jalaali-js";
+import * as jalaali from "jalaali-js";
 
 export type JalaliDate = { jy: number; jm: number; jd: number };
 
