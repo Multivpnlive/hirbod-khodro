@@ -51,3 +51,61 @@ describe("finance", () => {
     expect(r.map((x) => x.profit)).toEqual([-312, -312]);
   });
 });
+
+// سناریوی خواسته‌شده: خرید ۵۰۰م، تعمیرات ۱۰م، فروش ۶۰۰م، سرمایه حمیدرضا ۳۰۰م و حسام ۲۰۰م
+describe("سناریوی معامله ۶۰۰ میلیونی", () => {
+  const deal = { id: "deal", purchase_price: 500_000_000, sale_price: 600_000_000, status: "sold" as const };
+  const dealExp = [{ car_id: "deal", amount: 10_000_000 }];
+  const dealInv = [
+    { car_id: "deal", partner_id: "حمیدرضا", amount: 300_000_000 },
+    { car_id: "deal", partner_id: "حسام", amount: 200_000_000 },
+  ];
+
+  it("بهای تمام‌شده = قیمت خرید + هزینه‌ها، بدون دوباره‌شماری سرمایه", () => {
+    expect(carCost(deal, dealExp)).toBe(510_000_000);
+  });
+  it("سود خالص ۹۰ میلیون", () => {
+    expect(carProfit(deal, dealExp)).toBe(90_000_000);
+  });
+  it("سهم سود حمیدرضا ۵۴ میلیون و حسام ۳۶ میلیون", () => {
+    const r = splitProfit(90_000_000, dealInv);
+    expect(r.map((x) => x.profit)).toEqual([54_000_000, 36_000_000]);
+  });
+  it("مانده پیش از تسویه: ۳۵۴ و ۲۳۶ میلیون", () => {
+    const r = carPartnerLedger(deal, dealExp, dealInv, []);
+    expect(r.map((x) => x.due)).toEqual([354_000_000, 236_000_000]);
+  });
+  it("پس از پرداخت ۵۰ میلیون به حمیدرضا: مانده ۳۰۴ میلیون و مانده حسام بدون تغییر ۲۳۶ میلیون", () => {
+    const r = carPartnerLedger(deal, dealExp, dealInv, [
+      { type: "settlement", car_id: "deal", partner_id: "حمیدرضا", amount: 50_000_000 },
+    ]);
+    expect(r.map((x) => x.due)).toEqual([304_000_000, 236_000_000]);
+    expect(r[0]!.settled).toBe(50_000_000);
+    expect(r[1]!.settled).toBe(0);
+  });
+  it("پرداخت‌های متوالی جایگزین هم نمی‌شوند بلکه جمع می‌شوند", () => {
+    const r = carPartnerLedger(deal, dealExp, dealInv, [
+      { type: "settlement", car_id: "deal", partner_id: "حمیدرضا", amount: 50_000_000 },
+      { type: "settlement", car_id: "deal", partner_id: "حمیدرضا", amount: 20_000_000 },
+    ]);
+    expect(r[0]!.settled).toBe(70_000_000);
+    expect(r[0]!.due).toBe(284_000_000);
+  });
+  it("مجموع مانده‌ها = سرمایه + سود − پرداخت‌ها", () => {
+    const txns = [{ type: "settlement", car_id: "deal", partner_id: "حمیدرضا", amount: 50_000_000 }];
+    const r = carPartnerLedger(deal, dealExp, dealInv, txns);
+    const dueTotal = r.reduce((s, x) => s + x.due, 0);
+    expect(dueTotal).toBe(500_000_000 + 90_000_000 - 50_000_000);
+  });
+  it("سناریوی زیان: فروش ۴۵۰ میلیون → زیان ۶۰ میلیون، سهم ۳۶ و ۲۴ میلیون منفی", () => {
+    const loss = { ...deal, sale_price: 450_000_000 };
+    expect(carProfit(loss, dealExp)).toBe(-60_000_000);
+    const r = carPartnerLedger(loss, dealExp, dealInv, []);
+    expect(r.map((x) => x.profit)).toEqual([-36_000_000, -24_000_000]);
+  });
+  it("خودروی موجود یا رزرو سود تحقق‌یافته ندارد", () => {
+    expect(carProfit({ ...deal, status: "available" }, dealExp)).toBeNull();
+    expect(carProfit({ ...deal, status: "reserved" }, dealExp)).toBeNull();
+    expect(carProfit({ ...deal, sale_price: null }, dealExp)).toBeNull();
+  });
+});

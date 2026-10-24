@@ -4,8 +4,8 @@ import { AdminOnly, PageHeader, Stat } from "@/components/AppShell";
 import { useAllData } from "@/lib/data";
 import { carCost, carProfit, cashBalance, partnerShare } from "@/lib/finance";
 import { faDate, toman, txnLabel } from "@/lib/format";
-import { Input } from "@/components/ui/input";
 import { Field, NativeSelect } from "@/components/form-bits";
+import { JalaliDateField } from "@/components/JalaliDateField";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({ meta: [{ title: "گزارش‌ها | هیربد خودرو" }] }),
@@ -39,8 +39,8 @@ function Reports() {
     <div>
       <PageHeader title="گزارش‌گیری" />
       <div className="card-elevated p-4 grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <Field label="از تاریخ"><Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
-        <Field label="تا تاریخ"><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
+        <Field label="از تاریخ"><JalaliDateField value={from} onChange={setFrom} /></Field>
+        <Field label="تا تاریخ"><JalaliDateField value={to} onChange={setTo} /></Field>
         <Field label="خودرو">
           <NativeSelect value={carId} onChange={(e) => setCarId(e.target.value)}><option value="">همه</option>{d.cars.map((c) => <option key={c.id} value={c.id}>{c.brand} {c.model}</option>)}</NativeSelect>
         </Field>

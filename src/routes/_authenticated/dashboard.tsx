@@ -4,7 +4,8 @@ import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
 import { AdminOnly, PageHeader, Stat } from "@/components/AppShell";
 import { useAllData } from "@/lib/data";
 import { carProfit, cashBalance } from "@/lib/finance";
-import { fmt, toman, faMonth, statusLabel } from "@/lib/format";
+import { fmt, toman, statusLabel } from "@/lib/format";
+import { jalaliMonthKey, jalaliMonthLabel } from "@/lib/jalali";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "داشبورد | هیربد خودرو" }] }),
@@ -25,10 +26,13 @@ function Dashboard() {
     const profit = profits.reduce((a, x) => a + x.p, 0);
     const byMonth = new Map<string, number>();
     profits.forEach(({ c, p }) => {
-      const k = (c.sale_date ?? c.purchase_date).slice(0, 7);
+      const k = jalaliMonthKey(c.sale_date ?? c.purchase_date);
       byMonth.set(k, (byMonth.get(k) ?? 0) + p);
     });
-    const monthly = [...byMonth.entries()].sort().map(([k, v]) => ({ m: faMonth(k + "-01"), v }));
+    const monthly = [...byMonth.entries()].sort().map(([k, v]) => {
+      const [jy, jm] = k.split("-").map(Number);
+      return { m: jalaliMonthLabel(jy!, jm!), v };
+    });
     const statuses = (["available", "reserved", "sold"] as const).map((st) => ({ name: statusLabel[st], value: cars.filter((c) => c.status === st).length }));
     return { capital, tradeValue, profit, cash: cashBalance(txns), monthly, statuses, profits };
   }, [cars, expenses, investments, txns]);

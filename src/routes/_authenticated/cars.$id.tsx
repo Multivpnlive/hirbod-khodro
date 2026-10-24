@@ -10,6 +10,8 @@ import { faDate, pct, toman, txnLabel } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DemoTag, Field, NativeSelect, StatusBadge, num } from "@/components/form-bits";
+import { JalaliDateField } from "@/components/JalaliDateField";
+import { todayIso } from "@/lib/jalali";
 
 export const Route = createFileRoute("/_authenticated/cars/$id")({
   head: () => ({ meta: [{ title: "جزئیات خودرو | هیربد خودرو" }] }),
@@ -75,6 +77,8 @@ function CarDetail() {
     e.preventDefault();
     const form = e.currentTarget;
     const f = new FormData(form);
+    if (!f.get("partner")) { toast.error("لطفاً شریک را انتخاب کنید"); return; }
+    if (num(f.get("amount")) <= 0) { toast.error("مبلغ سرمایه معتبر نیست"); return; }
     await run(
       supabase.from("car_investments").upsert(
         { car_id: id, partner_id: String(f.get("partner")), amount: num(f.get("amount")), is_demo: car!.is_demo },
@@ -89,6 +93,8 @@ function CarDetail() {
     e.preventDefault();
     const form = e.currentTarget;
     const f = new FormData(form);
+    if (!f.get("partner")) { toast.error("لطفاً شریک را انتخاب کنید"); return; }
+    if (num(f.get("amount")) <= 0) { toast.error("مبلغ پرداخت معتبر نیست"); return; }
     await run(
       supabase.from("transactions").insert({
         type: f.get("type") as "settlement" | "payment",
@@ -155,7 +161,7 @@ function CarDetail() {
         </Field>
         <Field label="قیمت خرید"><Input name="purchase_price" defaultValue={car.purchase_price} inputMode="numeric" /></Field>
         <Field label="قیمت فروش"><Input name="sale_price" defaultValue={car.sale_price ?? ""} inputMode="numeric" /></Field>
-        <Field label="تاریخ فروش"><Input name="sale_date" type="date" defaultValue={car.sale_date ?? ""} /></Field>
+        <Field label="تاریخ فروش"><JalaliDateField name="sale_date" defaultValue={car.sale_date ?? ""} key={car.id + (car.sale_date ?? "")} /></Field>
         <Button>ذخیره معامله</Button>
       </form>
 
@@ -163,27 +169,46 @@ function CarDetail() {
         <div className="card-elevated p-4">
           <div className="font-bold mb-1">سرمایه و سهم سود شرکا</div>
           <div className="text-xs text-muted-foreground mb-3">مجموع سرمایه: {toman(capitalTotal)}</div>
-          <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground"><tr><th className="text-start py-1">شریک</th><th className="text-start">سرمایه</th><th className="text-start">مشارکت</th><th className="text-start">سود/زیان</th><th className="text-start">تسویه‌شده</th><th className="text-start">مانده</th><th /></tr></thead>
-            <tbody className="divide-y">
-              {ledger.map((s) => {
-                const inv = invs.find((i) => i.partner_id === s.partner_id)!;
-                return (
-                  <tr key={s.partner_id}>
-                    <td className="py-2">{pName(s.partner_id)}</td>
-                    <td><button className="underline decoration-dotted" onClick={() => editInvestment(inv.id, s.capital)}>{toman(s.capital)}</button></td>
-                    <td>{pct(s.sharePct)}</td>
-                    <td className={s.profit >= 0 ? "text-success" : "text-destructive"}>{profit === null ? "—" : toman(s.profit)}</td>
-                    <td>{toman(s.settled)}</td>
-                    <td className="font-bold">{profit === null ? "—" : toman(s.due)}</td>
-                    <td><button aria-label="حذف" onClick={() => run(supabase.from("car_investments").delete().eq("id", inv.id), "حذف شد")}><Trash2 className="size-3.5 text-muted-foreground" /></button></td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {ledger.map((s) => {
+              const inv = invs.find((i) => i.partner_id === s.partner_id)!;
+              const Row = ({ label, value, className }: { label: string; value: string; className?: string }) => (
+                <div className="flex items-center justify-between gap-3 py-1">
+                  <span className="text-xs text-muted-foreground shrink-0">{label}</span>
+                  <span className={`whitespace-nowrap text-sm ${className ?? ""}`}>{value}</span>
+                </div>
+              );
+              return (
+                <div key={s.partner_id} className="rounded-lg border p-3">
+                  <div className="flex items-center justify-between gap-2 border-b pb-2 mb-1">
+                    <span className="font-bold truncate">{pName(s.partner_id)}</span>
+                    <button aria-label="حذف شریک" className="shrink-0 p-1" onClick={() => run(supabase.from("car_investments").delete().eq("id", inv.id), "حذف شد")}>
+                      <Trash2 className="size-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 py-1">
+                    <span className="text-xs text-muted-foreground shrink-0">سرمایه</span>
+                    <button className="whitespace-nowrap text-sm underline decoration-dotted" onClick={() => editInvestment(inv.id, s.capital)}>{toman(s.capital)}</button>
+                  </div>
+                  <Row label="درصد مشارکت" value={pct(s.sharePct)} />
+                  <Row label="سهم سود/زیان" value={profit === null ? "—" : `${s.profit > 0 ? "+" : ""}${toman(s.profit)}`} className={s.profit >= 0 ? "text-success" : "text-destructive"} />
+                  <Row label="تسویه‌شده" value={toman(s.settled)} />
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 border-t mt-1 pt-2">
+                    <span className="text-xs font-bold">مانده قابل پرداخت</span>
+                    <span className="whitespace-nowrap font-extrabold">{profit === null ? "—" : toman(s.due)}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+          {invs.length > 0 && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-3 border-t pt-2">
+              <span>مجموع سرمایه: <b className="text-foreground whitespace-nowrap">{toman(capitalTotal)}</b></span>
+              <span>مجموع سود/زیان: <b className="text-foreground whitespace-nowrap">{profit === null ? "—" : toman(profit)}</b></span>
+              <span>مجموع تسویه‌شده: <b className="text-foreground whitespace-nowrap">{toman(ledger.reduce((a, s) => a + s.settled, 0))}</b></span>
+              <span>مجموع مانده‌ها: <b className="text-foreground whitespace-nowrap">{profit === null ? "—" : toman(ledger.reduce((a, s) => a + s.due, 0))}</b></span>
+            </div>
+          )}
           {invs.length === 0 && <div className="text-sm text-muted-foreground py-2">هنوز سرمایه‌ای ثبت نشده.</div>}
           <form onSubmit={addInvestment} className="grid grid-cols-[1fr_1fr_auto] gap-2 mt-4">
             <NativeSelect name="partner" required>
@@ -212,7 +237,7 @@ function CarDetail() {
           <form onSubmit={addExpense} className="grid grid-cols-2 gap-2 mt-4">
             <Input name="title" placeholder="عنوان هزینه" required />
             <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
-            <Input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+            <JalaliDateField name="date" defaultValue={todayIso()} />
             <Input name="description" placeholder="توضیح" />
             <Button size="sm" className="col-span-2">افزودن هزینه</Button>
           </form>
@@ -240,7 +265,7 @@ function CarDetail() {
             <option value="payment">پرداخت</option>
           </NativeSelect>
           <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
-          <Input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} />
+          <JalaliDateField name="date" defaultValue={todayIso()} />
           <Input name="description" placeholder="توضیح" />
           <Button size="sm">ثبت</Button>
         </form>
