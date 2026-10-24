@@ -201,6 +201,14 @@ function CarDetail() {
               );
             })}
           </div>
+          {invs.length > 0 && (
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground mt-3 border-t pt-2">
+              <span>مجموع سرمایه: <b className="text-foreground whitespace-nowrap">{toman(capitalTotal)}</b></span>
+              <span>مجموع سود/زیان: <b className="text-foreground whitespace-nowrap">{profit === null ? "—" : toman(profit)}</b></span>
+              <span>مجموع تسویه‌شده: <b className="text-foreground whitespace-nowrap">{toman(ledger.reduce((a, s) => a + s.settled, 0))}</b></span>
+              <span>مجموع مانده‌ها: <b className="text-foreground whitespace-nowrap">{profit === null ? "—" : toman(ledger.reduce((a, s) => a + s.due, 0))}</b></span>
+            </div>
+          )}
           {invs.length === 0 && <div className="text-sm text-muted-foreground py-2">هنوز سرمایه‌ای ثبت نشده.</div>}
           <form onSubmit={addInvestment} className="grid grid-cols-[1fr_1fr_auto] gap-2 mt-4">
             <NativeSelect name="partner" required>
