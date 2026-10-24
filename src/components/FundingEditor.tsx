@@ -3,12 +3,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, num } from "@/components/form-bits";
 import { toman } from "@/lib/format";
+import { todayIso } from "@/lib/jalali";
+import { JalaliDateField } from "@/components/JalaliDateField";
 import type { Partner } from "@/lib/data";
 
 export type InvRow = { partner_id: string; amount: string };
 export type ExpRow = { title: string; amount: string; date: string; description: string };
 
-export const today = () => new Date().toISOString().slice(0, 10);
+export const today = todayIso;
 
 /** «سرمایه شرکا و هزینه‌ها» section used inside the new-car form. */
 export function FundingEditor({
@@ -53,7 +55,7 @@ export function FundingEditor({
             <div key={i} className="grid grid-cols-2 gap-2 rounded-md bg-muted/40 p-2">
               <Input placeholder="عنوان" value={r.title} onChange={(e) => up("title", e.target.value)} />
               <Input placeholder="مبلغ" inputMode="numeric" value={r.amount} onChange={(e) => up("amount", e.target.value)} />
-              <Input type="date" value={r.date} onChange={(e) => up("date", e.target.value)} />
+              <JalaliDateField value={r.date} onChange={(v) => up("date", v)} />
               <div className="flex gap-1">
                 <Input placeholder="توضیح" value={r.description} onChange={(e) => up("description", e.target.value)} />
                 <Button type="button" variant="ghost" size="icon" aria-label="حذف" onClick={() => setExps(exps.filter((_, j) => j !== i))}><Trash2 className="size-4" /></Button>

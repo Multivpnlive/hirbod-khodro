@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DemoTag, Field, NativeSelect, StatusBadge, num } from "@/components/form-bits";
 import { FundingEditor, type ExpRow, type InvRow } from "@/components/FundingEditor";
+import { JalaliDateField } from "@/components/JalaliDateField";
+import { todayIso } from "@/lib/jalali";
 
 export const Route = createFileRoute("/_authenticated/cars/")({
   head: () => ({ meta: [{ title: "خودروها | هیربد خودرو" }] }),
@@ -117,9 +119,9 @@ function AddCar() {
           <Field label="رنگ"><Input name="color" /></Field>
           <div className="col-span-2"><Field label="شماره پلاک"><Input name="plate" /></Field></div>
           <Field label="قیمت خرید (تومان)"><Input name="purchase_price" inputMode="numeric" required onChange={(e) => setPurchase(num(e.target.value))} /></Field>
-          <Field label="تاریخ خرید"><Input name="purchase_date" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} /></Field>
+          <Field label="تاریخ خرید"><JalaliDateField name="purchase_date" defaultValue={todayIso()} /></Field>
           <Field label="قیمت فروش (تومان)"><Input name="sale_price" inputMode="numeric" /></Field>
-          <Field label="تاریخ فروش"><Input name="sale_date" type="date" /></Field>
+          <Field label="تاریخ فروش"><JalaliDateField name="sale_date" /></Field>
           <div className="col-span-2">
             <Field label="وضعیت معامله">
               <NativeSelect name="status" defaultValue="available">

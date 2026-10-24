@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DemoTag, Field, NativeSelect, num } from "@/components/form-bits";
+import { JalaliDateField } from "@/components/JalaliDateField";
+import { todayIso } from "@/lib/jalali";
 
 export const Route = createFileRoute("/_authenticated/transactions")({
   head: () => ({ meta: [{ title: "تراکنش‌ها | هیربد خودرو" }] }),
@@ -107,7 +109,7 @@ function AddTxn() {
             </NativeSelect>
           </Field>
           <Field label="مبلغ (تومان)"><Input name="amount" inputMode="numeric" required /></Field>
-          <Field label="تاریخ"><Input name="date" type="date" defaultValue={new Date().toISOString().slice(0, 10)} /></Field>
+          <Field label="تاریخ"><JalaliDateField name="date" defaultValue={todayIso()} /></Field>
           <Field label="شریک (اختیاری)">
             <NativeSelect name="partner"><option value="">—</option>{d.partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</NativeSelect>
           </Field>
