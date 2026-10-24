@@ -193,8 +193,8 @@ function CarDetail() {
                   <Row label="درصد مشارکت" value={pct(s.sharePct)} />
                   <Row label="سهم سود/زیان" value={profit === null ? "—" : `${s.profit > 0 ? "+" : ""}${toman(s.profit)}`} className={s.profit >= 0 ? "text-success" : "text-destructive"} />
                   <Row label="تسویه‌شده" value={toman(s.settled)} />
-                  <div className="flex items-center justify-between gap-3 border-t mt-1 pt-2">
-                    <span className="text-xs font-bold shrink-0">مانده قابل پرداخت</span>
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 border-t mt-1 pt-2">
+                    <span className="text-xs font-bold">مانده قابل پرداخت</span>
                     <span className="whitespace-nowrap font-extrabold">{profit === null ? "—" : toman(s.due)}</span>
                   </div>
                 </div>
