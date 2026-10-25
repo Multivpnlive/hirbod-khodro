@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminOnly, Stat } from "@/components/AppShell";
 import { useAllData } from "@/lib/data";
 import { carCost, carExpensesTotal, carPartnerLedger, carProfit } from "@/lib/finance";
-import { faDate, pct, toman, txnLabel } from "@/lib/format";
+import { faDate, faYear, pct, toman, txnLabel } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DemoTag, Field, NativeSelect, StatusBadge, num } from "@/components/form-bits";
@@ -136,7 +136,7 @@ function CarDetail() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold">{car.brand} {car.model} <DemoTag show={car.is_demo} /></h1>
-          <div className="text-sm text-muted-foreground mt-1">{car.year} · {car.color} · {car.plate} · خرید {faDate(car.purchase_date)}</div>
+          <div className="text-sm text-muted-foreground mt-1">{faYear(car.year)} · {car.color} · {car.plate} · خرید {faDate(car.purchase_date)}</div>
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge status={car.status} />

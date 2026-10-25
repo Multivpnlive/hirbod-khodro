@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminOnly, PageHeader } from "@/components/AppShell";
 import { useAllData } from "@/lib/data";
 import { carCost, carProfit } from "@/lib/finance";
-import { toman } from "@/lib/format";
+import { faYear, toman } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -46,7 +46,7 @@ function Cars() {
                 <StatusBadge status={c.status} />
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                {c.year} · {c.color} · {c.plate}
+                {faYear(c.year)} · {c.color} · {c.plate}
               </div>
               <div className="grid grid-cols-2 gap-2 mt-4 text-sm">
                 <div>
