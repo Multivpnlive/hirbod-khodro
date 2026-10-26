@@ -3,8 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { LayoutDashboard, Car, Users, Wallet, FileBarChart, User, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useMe, useDemoMode } from "@/lib/data";
-import { Switch } from "@/components/ui/switch";
+import { useMe, usePerms, type PermKey } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 
 const adminNav = [
@@ -14,14 +13,22 @@ const adminNav = [
   { to: "/transactions", label: "تراکنش‌ها", icon: Wallet },
   { to: "/reports", label: "گزارش‌ها", icon: FileBarChart },
 ] as const;
-const partnerNav = [{ to: "/my", label: "حساب من", icon: User }] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: me } = useMe();
-  const [showDemo, setShowDemo] = useDemoMode();
+  const { perms } = usePerms();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const nav = me?.isAdmin ? adminNav : partnerNav;
+  const nav = me?.isAdmin
+    ? [...adminNav]
+    : [
+        { to: "/dashboard", label: "داشبورد", icon: LayoutDashboard },
+        { to: "/cars", label: "خودروها", icon: Car },
+        ...(perms.view_all_partners ? [{ to: "/partners", label: "شرکا", icon: Users }] : []),
+        { to: "/transactions", label: "تراکنش‌ها", icon: Wallet },
+        { to: "/reports", label: "گزارش‌ها", icon: FileBarChart },
+        { to: "/my", label: "حساب من", icon: User },
+      ];
 
   async function signOut() {
     await qc.cancelQueries();
@@ -51,10 +58,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className="mt-auto space-y-4">
-          <label className="flex items-center justify-between text-sm">
-            داده‌های آزمایشی
-            <Switch checked={showDemo} onCheckedChange={setShowDemo} />
-          </label>
           <div className="text-xs opacity-70 truncate" dir="ltr">{me?.user.email}</div>
           <Button variant="secondary" size="sm" className="w-full" onClick={signOut}>
             <LogOut className="size-4" /> خروج
@@ -64,39 +67,29 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <header className="md:hidden flex items-center justify-between bg-sidebar text-sidebar-foreground px-4 py-3 sticky top-0 z-20">
         <div className="font-extrabold">هیربد خودرو</div>
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-xs">
-            نمونه
-            <Switch checked={showDemo} onCheckedChange={setShowDemo} />
-          </label>
-          <button onClick={signOut} aria-label="خروج"><LogOut className="size-5" /></button>
-        </div>
+        <button onClick={signOut} aria-label="خروج"><LogOut className="size-5" /></button>
       </header>
 
       <main className="flex-1 min-w-0 p-4 md:p-8 pb-24 md:pb-8">
-        {showDemo && (
-          <div className="mb-4 rounded-lg border border-warning/50 bg-warning/10 px-4 py-2 text-sm">
-            داده‌های آزمایشی (با برچسب «نمونه») نمایش داده می‌شوند. برای دیدن فقط اطلاعات واقعی آن را خاموش کنید.
-          </div>
-        )}
         {children}
       </main>
 
-      {nav.length > 1 && (
-        <nav className="md:hidden fixed bottom-0 inset-x-0 z-20 bg-card border-t grid grid-cols-5">
-          {nav.map((n) => (
-            <Link
-              key={n.to}
-              to={n.to}
-              className="flex flex-col items-center gap-1 py-2 text-[11px] text-muted-foreground"
-              activeProps={{ className: "text-primary font-bold" }}
-            >
-              <n.icon className="size-5" />
-              {n.label}
-            </Link>
-          ))}
-        </nav>
-      )}
+      <nav
+        className="md:hidden fixed bottom-0 inset-x-0 z-20 bg-card border-t grid"
+        style={{ gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}
+      >
+        {nav.map((n) => (
+          <Link
+            key={n.to}
+            to={n.to}
+            className="flex flex-col items-center gap-1 py-2 text-[11px] text-muted-foreground"
+            activeProps={{ className: "text-primary font-bold" }}
+          >
+            <n.icon className="size-5" />
+            {n.label}
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }
@@ -121,9 +114,10 @@ export function Stat({ label, value, tone }: { label: string; value: string; ton
   );
 }
 
-export function AdminOnly({ children }: { children: ReactNode }) {
-  const { data: me, isLoading } = useMe();
+/** Gates a page behind admin role or a specific partner permission. */
+export function PermOnly({ perm, children }: { perm?: PermKey; children: ReactNode }) {
+  const { isAdmin, perms, isLoading } = usePerms();
   if (isLoading) return <div className="text-muted-foreground">در حال بارگذاری…</div>;
-  if (!me?.isAdmin) return <Navigate to="/my" replace />;
+  if (!isAdmin && !(perm && perms[perm])) return <Navigate to="/my" replace />;
   return <>{children}</>;
 }
