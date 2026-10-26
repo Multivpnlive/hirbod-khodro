@@ -132,12 +132,12 @@ function CarDetail() {
       <Link to="/cars" className="inline-flex items-center gap-1 text-sm text-muted-foreground"><ArrowRight className="size-4" /> خودروها</Link>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold">{car.brand} {car.model} <DemoTag show={car.is_demo} /></h1>
+          <h1 className="text-2xl font-extrabold">{car.brand} {car.model}</h1>
           <div className="text-sm text-muted-foreground mt-1">{faYear(car.year)} · {car.color} · {car.plate} · خرید {faDate(car.purchase_date)}</div>
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge status={car.status} />
-          <Button variant="ghost" size="icon" onClick={removeCar} aria-label="حذف"><Trash2 className="size-4 text-destructive" /></Button>
+          {isAdmin && <Button variant="ghost" size="icon" onClick={removeCar} aria-label="حذف"><Trash2 className="size-4 text-destructive" /></Button>}
         </div>
       </div>
 
@@ -148,6 +148,7 @@ function CarDetail() {
         <Stat label="سود / زیان" value={profit === null ? "فروخته نشده" : toman(profit)} tone={profit === null ? undefined : profit >= 0 ? "pos" : "neg"} />
       </div>
 
+      {perms.edit_car && (
       <form onSubmit={saveDeal} className="card-elevated p-4 grid grid-cols-2 md:grid-cols-5 gap-3 items-end" key={car.id + car.status + car.sale_price}>
         <Field label="وضعیت">
           <NativeSelect name="status" defaultValue={car.status}>
@@ -161,6 +162,7 @@ function CarDetail() {
         <Field label="تاریخ فروش"><JalaliDateField name="sale_date" defaultValue={car.sale_date ?? ""} key={car.id + (car.sale_date ?? "")} /></Field>
         <Button>ذخیره معامله</Button>
       </form>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="card-elevated p-4">
