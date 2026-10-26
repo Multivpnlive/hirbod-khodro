@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { AdminOnly, PageHeader, Stat } from "@/components/AppShell";
+import { PageHeader, Stat } from "@/components/AppShell";
 import { useAllData } from "@/lib/data";
 import { carCost, carProfit, cashBalance, partnerShare } from "@/lib/finance";
 import { faDate, toman, txnLabel } from "@/lib/format";
@@ -9,11 +9,7 @@ import { JalaliDateField } from "@/components/JalaliDateField";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({ meta: [{ title: "گزارش‌ها | هیربد خودرو" }] }),
-  component: () => (
-    <AdminOnly>
-      <Reports />
-    </AdminOnly>
-  ),
+  component: Reports,
 });
 
 function Reports() {
