@@ -3,28 +3,25 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Trash2, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { AdminOnly, Stat } from "@/components/AppShell";
-import { useAllData } from "@/lib/data";
+import { Stat } from "@/components/AppShell";
+import { useAllData, usePerms } from "@/lib/data";
 import { carCost, carExpensesTotal, carPartnerLedger, carProfit } from "@/lib/finance";
 import { faDate, faYear, pct, toman, txnLabel } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DemoTag, Field, NativeSelect, StatusBadge, num } from "@/components/form-bits";
+import { Field, NativeSelect, StatusBadge, num } from "@/components/form-bits";
 import { JalaliDateField } from "@/components/JalaliDateField";
 import { todayIso } from "@/lib/jalali";
 
 export const Route = createFileRoute("/_authenticated/cars/$id")({
   head: () => ({ meta: [{ title: "جزئیات خودرو | هیربد خودرو" }] }),
-  component: () => (
-    <AdminOnly>
-      <CarDetail />
-    </AdminOnly>
-  ),
+  component: CarDetail,
 });
 
 function CarDetail() {
   const { id } = Route.useParams();
   const d = useAllData();
+  const { isAdmin, perms } = usePerms();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const refresh = () => qc.invalidateQueries({ queryKey: ["all-data"] });
