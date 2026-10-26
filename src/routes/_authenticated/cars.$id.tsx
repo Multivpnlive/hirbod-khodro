@@ -236,20 +236,26 @@ function CarDetail() {
           <div className="divide-y">
             {exps.map((e) => (
               <div key={e.id} className="flex items-center justify-between py-2 text-sm">
-                <button className="text-start" onClick={() => editExpense(e)}>{e.title} <span className="text-xs text-muted-foreground">{faDate(e.expense_date)}</span>{e.description && <div className="text-xs text-muted-foreground">{e.description}</div>}</button>
+                {perms.add_expense ? (
+                  <button className="text-start" onClick={() => editExpense(e)}>{e.title} <span className="text-xs text-muted-foreground">{faDate(e.expense_date)}</span>{e.description && <div className="text-xs text-muted-foreground">{e.description}</div>}</button>
+                ) : (
+                  <span className="text-start">{e.title} <span className="text-xs text-muted-foreground">{faDate(e.expense_date)}</span>{e.description && <div className="text-xs text-muted-foreground">{e.description}</div>}</span>
+                )}
                 <span className="flex items-center gap-2">{toman(e.amount)}
-                  <button onClick={() => run(supabase.from("car_expenses").delete().eq("id", e.id), "حذف شد")}><Trash2 className="size-3.5 text-muted-foreground" /></button>
+                  {perms.add_expense && <button onClick={() => run(supabase.from("car_expenses").delete().eq("id", e.id), "حذف شد")}><Trash2 className="size-3.5 text-muted-foreground" /></button>}
                 </span>
               </div>
             ))}
           </div>
-          <form onSubmit={addExpense} className="grid grid-cols-2 gap-2 mt-4">
-            <Input name="title" placeholder="عنوان هزینه" required />
-            <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
-            <JalaliDateField name="date" defaultValue={todayIso()} />
-            <Input name="description" placeholder="توضیح" />
-            <Button size="sm" className="col-span-2">افزودن هزینه</Button>
-          </form>
+          {perms.add_expense && (
+            <form onSubmit={addExpense} className="grid grid-cols-2 gap-2 mt-4">
+              <Input name="title" placeholder="عنوان هزینه" required />
+              <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
+              <JalaliDateField name="date" defaultValue={todayIso()} />
+              <Input name="description" placeholder="توضیح" />
+              <Button size="sm" className="col-span-2">افزودن هزینه</Button>
+            </form>
+          )}
         </div>
       </div>
 
@@ -264,20 +270,22 @@ function CarDetail() {
           ))}
           {carTxns.length === 0 && <div className="text-muted-foreground py-2">هنوز پرداختی ثبت نشده.</div>}
         </div>
-        <form onSubmit={addSettlement} className="grid grid-cols-2 md:grid-cols-6 gap-2 mt-4">
-          <NativeSelect name="partner" required>
-            <option value="">شریک</option>
-            {invs.map((i) => <option key={i.partner_id} value={i.partner_id}>{pName(i.partner_id)}</option>)}
-          </NativeSelect>
-          <NativeSelect name="type" defaultValue="settlement">
-            <option value="settlement">تسویه شریک</option>
-            <option value="payment">پرداخت</option>
-          </NativeSelect>
-          <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
-          <JalaliDateField name="date" defaultValue={todayIso()} />
-          <Input name="description" placeholder="توضیح" />
-          <Button size="sm">ثبت</Button>
-        </form>
+        {(perms.add_payment || perms.manage_settlements) && (
+          <form onSubmit={addSettlement} className="grid grid-cols-2 md:grid-cols-6 gap-2 mt-4">
+            <NativeSelect name="partner" required>
+              <option value="">شریک</option>
+              {invs.map((i) => <option key={i.partner_id} value={i.partner_id}>{pName(i.partner_id)}</option>)}
+            </NativeSelect>
+            <NativeSelect name="type" defaultValue={perms.manage_settlements ? "settlement" : "payment"}>
+              {perms.manage_settlements && <option value="settlement">تسویه شریک</option>}
+              {perms.add_payment && <option value="payment">پرداخت</option>}
+            </NativeSelect>
+            <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
+            <JalaliDateField name="date" defaultValue={todayIso()} />
+            <Input name="description" placeholder="توضیح" />
+            <Button size="sm">ثبت</Button>
+          </form>
+        )}
       </div>
     </div>
   );
