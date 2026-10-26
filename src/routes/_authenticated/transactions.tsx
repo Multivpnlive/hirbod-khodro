@@ -76,6 +76,10 @@ function Transactions() {
 
 function AddTxn() {
   const d = useAllData();
+  const { perms } = usePerms();
+  const allowedTypes = Object.entries(txnLabel).filter(([k]) =>
+    k === "settlement" ? perms.manage_settlements : perms.add_payment,
+  );
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -101,8 +105,8 @@ function AddTxn() {
         <DialogHeader><DialogTitle>ثبت تراکنش</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="grid grid-cols-2 gap-3">
           <Field label="نوع">
-            <NativeSelect name="type" defaultValue="receipt">
-              {Object.entries(txnLabel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            <NativeSelect name="type" defaultValue={allowedTypes[0]?.[0] ?? "receipt"}>
+              {allowedTypes.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </NativeSelect>
           </Field>
           <Field label="مبلغ (تومان)"><Input name="amount" inputMode="numeric" required /></Field>
