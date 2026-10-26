@@ -181,13 +181,19 @@ function CarDetail() {
                 <div key={s.partner_id} className="rounded-lg border p-3">
                   <div className="flex items-center justify-between gap-2 border-b pb-2 mb-1">
                     <span className="font-bold truncate">{pName(s.partner_id)}</span>
-                    <button aria-label="حذف شریک" className="shrink-0 p-1" onClick={() => run(supabase.from("car_investments").delete().eq("id", inv.id), "حذف شد")}>
-                      <Trash2 className="size-4 text-muted-foreground" />
-                    </button>
+                    {perms.edit_car && (
+                      <button aria-label="حذف شریک" className="shrink-0 p-1" onClick={() => run(supabase.from("car_investments").delete().eq("id", inv.id), "حذف شد")}>
+                        <Trash2 className="size-4 text-muted-foreground" />
+                      </button>
+                    )}
                   </div>
                   <div className="flex items-center justify-between gap-3 py-1">
                     <span className="text-xs text-muted-foreground shrink-0">سرمایه</span>
-                    <button className="whitespace-nowrap text-sm underline decoration-dotted" onClick={() => editInvestment(inv.id, s.capital)}>{toman(s.capital)}</button>
+                    {perms.edit_car ? (
+                      <button className="whitespace-nowrap text-sm underline decoration-dotted" onClick={() => editInvestment(inv.id, s.capital)}>{toman(s.capital)}</button>
+                    ) : (
+                      <span className="whitespace-nowrap text-sm">{toman(s.capital)}</span>
+                    )}
                   </div>
                   <Row label="درصد مشارکت" value={pct(s.sharePct)} />
                   <Row label="سهم سود/زیان" value={profit === null ? "—" : `${s.profit > 0 ? "+" : ""}${toman(s.profit)}`} className={s.profit >= 0 ? "text-success" : "text-destructive"} />
@@ -209,15 +215,19 @@ function CarDetail() {
             </div>
           )}
           {invs.length === 0 && <div className="text-sm text-muted-foreground py-2">هنوز سرمایه‌ای ثبت نشده.</div>}
-          <form onSubmit={addInvestment} className="grid grid-cols-[1fr_1fr_auto] gap-2 mt-4">
-            <NativeSelect name="partner" required>
-              <option value="">انتخاب شریک</option>
-              {d.partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </NativeSelect>
-            <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
-            <Button size="sm">افزودن / ویرایش</Button>
-          </form>
-          <div className="text-[11px] text-muted-foreground mt-1">مانده = سرمایه + سهم سود یا زیان − تسویه‌های همین خودرو. برای ویرایش سرمایه روی مبلغ بزنید.</div>
+          {perms.edit_car && (
+            <>
+              <form onSubmit={addInvestment} className="grid grid-cols-[1fr_1fr_auto] gap-2 mt-4">
+                <NativeSelect name="partner" required>
+                  <option value="">انتخاب شریک</option>
+                  {d.partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </NativeSelect>
+                <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
+                <Button size="sm">افزودن / ویرایش</Button>
+              </form>
+              <div className="text-[11px] text-muted-foreground mt-1">مانده = سرمایه + سهم سود یا زیان − تسویه‌های همین خودرو. برای ویرایش سرمایه روی مبلغ بزنید.</div>
+            </>
+          )}
         </div>
 
         <div className="card-elevated p-4">
