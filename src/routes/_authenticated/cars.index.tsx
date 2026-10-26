@@ -4,34 +4,31 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { AdminOnly, PageHeader } from "@/components/AppShell";
-import { useAllData } from "@/lib/data";
+import { PageHeader } from "@/components/AppShell";
+import { useAllData, usePerms } from "@/lib/data";
 import { carCost, carProfit } from "@/lib/finance";
 import { faYear, toman } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DemoTag, Field, NativeSelect, StatusBadge, num } from "@/components/form-bits";
+import { Field, NativeSelect, StatusBadge, num } from "@/components/form-bits";
 import { FundingEditor, type ExpRow, type InvRow } from "@/components/FundingEditor";
 import { JalaliDateField } from "@/components/JalaliDateField";
 import { todayIso } from "@/lib/jalali";
 
 export const Route = createFileRoute("/_authenticated/cars/")({
   head: () => ({ meta: [{ title: "خودروها | هیربد خودرو" }] }),
-  component: () => (
-    <AdminOnly>
-      <Cars />
-    </AdminOnly>
-  ),
+  component: Cars,
 });
 
 function Cars() {
   const { cars, expenses, isLoading } = useAllData();
+  const { perms } = usePerms();
   const [q, setQ] = useState("");
   const list = cars.filter((c) => `${c.brand} ${c.model} ${c.plate ?? ""}`.includes(q));
   return (
     <div>
-      <PageHeader title="خودروها" action={<AddCar />} />
+      <PageHeader title="خودروها" action={perms.create_car ? <AddCar /> : undefined} />
       <Input placeholder="جستجو در برند، مدل یا پلاک…" value={q} onChange={(e) => setQ(e.target.value)} className="mb-4 max-w-sm bg-card" />
       {isLoading && <div className="text-muted-foreground">در حال بارگذاری…</div>}
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -41,7 +38,7 @@ function Cars() {
             <Link key={c.id} to="/cars/$id" params={{ id: c.id }} className="card-elevated p-4 hover:border-primary transition-colors">
               <div className="flex justify-between items-start">
                 <div className="font-bold">
-                  {c.brand} {c.model} <DemoTag show={c.is_demo} />
+                  {c.brand} {c.model}
                 </div>
                 <StatusBadge status={c.status} />
               </div>

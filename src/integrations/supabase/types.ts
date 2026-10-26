@@ -148,6 +148,53 @@ export type Database = {
         }
         Relationships: []
       }
+      partner_permissions: {
+        Row: {
+          can_add_expense: boolean
+          can_add_payment: boolean
+          can_create_car: boolean
+          can_edit_car: boolean
+          can_manage_settlements: boolean
+          can_view_all_cars: boolean
+          can_view_all_partners: boolean
+          created_at: string
+          id: string
+          partner_id: string
+        }
+        Insert: {
+          can_add_expense?: boolean
+          can_add_payment?: boolean
+          can_create_car?: boolean
+          can_edit_car?: boolean
+          can_manage_settlements?: boolean
+          can_view_all_cars?: boolean
+          can_view_all_partners?: boolean
+          created_at?: string
+          id?: string
+          partner_id: string
+        }
+        Update: {
+          can_add_expense?: boolean
+          can_add_payment?: boolean
+          can_create_car?: boolean
+          can_edit_car?: boolean
+          can_manage_settlements?: boolean
+          can_view_all_cars?: boolean
+          can_view_all_partners?: boolean
+          created_at?: string
+          id?: string
+          partner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_permissions_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: true
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       partners: {
         Row: {
           created_at: string
@@ -273,6 +320,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_partner_perm: {
+        Args: { _perm: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

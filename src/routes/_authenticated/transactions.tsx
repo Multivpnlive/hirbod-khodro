@@ -4,28 +4,25 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { AdminOnly, PageHeader, Stat } from "@/components/AppShell";
-import { useAllData } from "@/lib/data";
+import { PageHeader, Stat } from "@/components/AppShell";
+import { useAllData, usePerms } from "@/lib/data";
 import { cashBalance } from "@/lib/finance";
 import { faDate, toman, txnLabel } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DemoTag, Field, NativeSelect, num } from "@/components/form-bits";
+import { Field, NativeSelect, num } from "@/components/form-bits";
 import { JalaliDateField } from "@/components/JalaliDateField";
 import { todayIso } from "@/lib/jalali";
 
 export const Route = createFileRoute("/_authenticated/transactions")({
   head: () => ({ meta: [{ title: "تراکنش‌ها | هیربد خودرو" }] }),
-  component: () => (
-    <AdminOnly>
-      <Transactions />
-    </AdminOnly>
-  ),
+  component: Transactions,
 });
 
 function Transactions() {
   const d = useAllData();
+  const { isAdmin, perms } = usePerms();
   const qc = useQueryClient();
   const [type, setType] = useState("");
   const list = d.txns.filter((t) => !type || t.type === type);
@@ -38,7 +35,7 @@ function Transactions() {
   }
   return (
     <div>
-      <PageHeader title="دریافت‌ها، پرداخت‌ها و تسویه" action={<AddTxn />} />
+      <PageHeader title="دریافت‌ها، پرداخت‌ها و تسویه" action={perms.add_payment || perms.manage_settlements ? <AddTxn /> : undefined} />
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
         <Stat label="دریافت‌ها" value={toman(sum("receipt"))} tone="pos" />
         <Stat label="پرداخت‌ها" value={toman(sum("payment"))} />
@@ -59,14 +56,14 @@ function Transactions() {
           return (
             <div key={t.id} className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
               <div>
-                <span className="font-bold">{txnLabel[t.type]}</span> <DemoTag show={t.is_demo} />
+                <span className="font-bold">{txnLabel[t.type]}</span>
                 <div className="text-xs text-muted-foreground mt-0.5">
                   {faDate(t.txn_date)} {t.description && `· ${t.description}`} {car && `· ${car.brand} ${car.model}`} {p && `· ${p.name}`}
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <span className={t.type === "receipt" ? "text-success font-bold" : "font-bold"}>{t.type === "receipt" ? "+" : "−"}{toman(t.amount)}</span>
-                <button onClick={() => del(t.id)} aria-label="حذف"><Trash2 className="size-4 text-muted-foreground" /></button>
+                {isAdmin && <button onClick={() => del(t.id)} aria-label="حذف"><Trash2 className="size-4 text-muted-foreground" /></button>}
               </div>
             </div>
           );
@@ -79,6 +76,10 @@ function Transactions() {
 
 function AddTxn() {
   const d = useAllData();
+  const { perms } = usePerms();
+  const allowedTypes = Object.entries(txnLabel).filter(([k]) =>
+    k === "settlement" ? perms.manage_settlements : perms.add_payment,
+  );
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -104,8 +105,8 @@ function AddTxn() {
         <DialogHeader><DialogTitle>ثبت تراکنش</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="grid grid-cols-2 gap-3">
           <Field label="نوع">
-            <NativeSelect name="type" defaultValue="receipt">
-              {Object.entries(txnLabel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            <NativeSelect name="type" defaultValue={allowedTypes[0]?.[0] ?? "receipt"}>
+              {allowedTypes.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </NativeSelect>
           </Field>
           <Field label="مبلغ (تومان)"><Input name="amount" inputMode="numeric" required /></Field>

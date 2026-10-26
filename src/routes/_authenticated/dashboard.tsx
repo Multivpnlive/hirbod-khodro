@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { AdminOnly, PageHeader, Stat } from "@/components/AppShell";
+import { PageHeader, Stat } from "@/components/AppShell";
 import { useAllData } from "@/lib/data";
 import { carProfit, cashBalance } from "@/lib/finance";
 import { fmt, toman, statusLabel } from "@/lib/format";
@@ -9,11 +9,7 @@ import { jalaliMonthKey, jalaliMonthLabel } from "@/lib/jalali";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "داشبورد | هیربد خودرو" }] }),
-  component: () => (
-    <AdminOnly>
-      <Dashboard />
-    </AdminOnly>
-  ),
+  component: Dashboard,
 });
 
 function Dashboard() {
@@ -97,7 +93,7 @@ function Dashboard() {
         <div className="divide-y">
           {s.profits.slice(0, 5).map(({ c, p }) => (
             <div key={c.id} className="flex justify-between py-2 text-sm">
-              <span>{c.brand} {c.model} {c.is_demo && <span className="text-xs text-muted-foreground">(نمونه)</span>}</span>
+              <span>{c.brand} {c.model}</span>
               <span className={p >= 0 ? "text-success font-bold" : "text-destructive font-bold"}>{toman(p)}</span>
             </div>
           ))}
