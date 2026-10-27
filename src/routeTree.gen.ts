@@ -13,9 +13,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedBrokerageRouteImport } from './routes/_authenticated/brokerage'
+import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedFundTransfersRouteImport } from './routes/_authenticated/fund-transfers'
+import { Route as AuthenticatedHawalasRouteImport } from './routes/_authenticated/hawalas'
 import { Route as AuthenticatedMyRouteImport } from './routes/_authenticated/my'
 import { Route as AuthenticatedPartnersRouteImport } from './routes/_authenticated/partners'
+import { Route as AuthenticatedReceivablesRouteImport } from './routes/_authenticated/receivables'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedTransactionsRouteImport } from './routes/_authenticated/transactions'
 import { Route as AuthenticatedCarsIndexRouteImport } from './routes/_authenticated/cars.index'
@@ -40,9 +45,30 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedBrokerageRoute = AuthenticatedBrokerageRouteImport.update({
+  id: '/brokerage',
+  path: '/brokerage',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCustomersRoute = AuthenticatedCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFundTransfersRoute =
+  AuthenticatedFundTransfersRouteImport.update({
+    id: '/fund-transfers',
+    path: '/fund-transfers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHawalasRoute = AuthenticatedHawalasRouteImport.update({
+  id: '/hawalas',
+  path: '/hawalas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMyRoute = AuthenticatedMyRouteImport.update({
@@ -55,6 +81,12 @@ const AuthenticatedPartnersRoute = AuthenticatedPartnersRouteImport.update({
   path: '/partners',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedReceivablesRoute =
+  AuthenticatedReceivablesRouteImport.update({
+    id: '/receivables',
+    path: '/receivables',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -81,9 +113,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/brokerage': typeof AuthenticatedBrokerageRoute
+  '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/fund-transfers': typeof AuthenticatedFundTransfersRoute
+  '/hawalas': typeof AuthenticatedHawalasRoute
   '/my': typeof AuthenticatedMyRoute
   '/partners': typeof AuthenticatedPartnersRoute
+  '/receivables': typeof AuthenticatedReceivablesRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/transactions': typeof AuthenticatedTransactionsRoute
   '/cars/$id': typeof AuthenticatedCarsIdRoute
@@ -93,9 +130,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/brokerage': typeof AuthenticatedBrokerageRoute
+  '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/fund-transfers': typeof AuthenticatedFundTransfersRoute
+  '/hawalas': typeof AuthenticatedHawalasRoute
   '/my': typeof AuthenticatedMyRoute
   '/partners': typeof AuthenticatedPartnersRoute
+  '/receivables': typeof AuthenticatedReceivablesRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/transactions': typeof AuthenticatedTransactionsRoute
   '/cars/$id': typeof AuthenticatedCarsIdRoute
@@ -107,9 +149,14 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/brokerage': typeof AuthenticatedBrokerageRoute
+  '/_authenticated/customers': typeof AuthenticatedCustomersRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/fund-transfers': typeof AuthenticatedFundTransfersRoute
+  '/_authenticated/hawalas': typeof AuthenticatedHawalasRoute
   '/_authenticated/my': typeof AuthenticatedMyRoute
   '/_authenticated/partners': typeof AuthenticatedPartnersRoute
+  '/_authenticated/receivables': typeof AuthenticatedReceivablesRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/transactions': typeof AuthenticatedTransactionsRoute
   '/_authenticated/cars/$id': typeof AuthenticatedCarsIdRoute
@@ -121,9 +168,14 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/brokerage'
+    | '/customers'
     | '/dashboard'
+    | '/fund-transfers'
+    | '/hawalas'
     | '/my'
     | '/partners'
+    | '/receivables'
     | '/reports'
     | '/transactions'
     | '/cars/$id'
@@ -133,9 +185,14 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/brokerage'
+    | '/customers'
     | '/dashboard'
+    | '/fund-transfers'
+    | '/hawalas'
     | '/my'
     | '/partners'
+    | '/receivables'
     | '/reports'
     | '/transactions'
     | '/cars/$id'
@@ -146,9 +203,14 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/brokerage'
+    | '/_authenticated/customers'
     | '/_authenticated/dashboard'
+    | '/_authenticated/fund-transfers'
+    | '/_authenticated/hawalas'
     | '/_authenticated/my'
     | '/_authenticated/partners'
+    | '/_authenticated/receivables'
     | '/_authenticated/reports'
     | '/_authenticated/transactions'
     | '/_authenticated/cars/$id'
@@ -192,11 +254,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/brokerage': {
+      id: '/_authenticated/brokerage'
+      path: '/brokerage'
+      fullPath: '/brokerage'
+      preLoaderRoute: typeof AuthenticatedBrokerageRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/customers': {
+      id: '/_authenticated/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof AuthenticatedCustomersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/fund-transfers': {
+      id: '/_authenticated/fund-transfers'
+      path: '/fund-transfers'
+      fullPath: '/fund-transfers'
+      preLoaderRoute: typeof AuthenticatedFundTransfersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/hawalas': {
+      id: '/_authenticated/hawalas'
+      path: '/hawalas'
+      fullPath: '/hawalas'
+      preLoaderRoute: typeof AuthenticatedHawalasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/my': {
@@ -211,6 +301,13 @@ declare module '@tanstack/react-router' {
       path: '/partners'
       fullPath: '/partners'
       preLoaderRoute: typeof AuthenticatedPartnersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/receivables': {
+      id: '/_authenticated/receivables'
+      path: '/receivables'
+      fullPath: '/receivables'
+      preLoaderRoute: typeof AuthenticatedReceivablesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reports': {
@@ -245,9 +342,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBrokerageRoute: typeof AuthenticatedBrokerageRoute
+  AuthenticatedCustomersRoute: typeof AuthenticatedCustomersRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedFundTransfersRoute: typeof AuthenticatedFundTransfersRoute
+  AuthenticatedHawalasRoute: typeof AuthenticatedHawalasRoute
   AuthenticatedMyRoute: typeof AuthenticatedMyRoute
   AuthenticatedPartnersRoute: typeof AuthenticatedPartnersRoute
+  AuthenticatedReceivablesRoute: typeof AuthenticatedReceivablesRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedTransactionsRoute: typeof AuthenticatedTransactionsRoute
   AuthenticatedCarsIdRoute: typeof AuthenticatedCarsIdRoute
@@ -255,9 +357,14 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBrokerageRoute: AuthenticatedBrokerageRoute,
+  AuthenticatedCustomersRoute: AuthenticatedCustomersRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedFundTransfersRoute: AuthenticatedFundTransfersRoute,
+  AuthenticatedHawalasRoute: AuthenticatedHawalasRoute,
   AuthenticatedMyRoute: AuthenticatedMyRoute,
   AuthenticatedPartnersRoute: AuthenticatedPartnersRoute,
+  AuthenticatedReceivablesRoute: AuthenticatedReceivablesRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedTransactionsRoute: AuthenticatedTransactionsRoute,
   AuthenticatedCarsIdRoute: AuthenticatedCarsIdRoute,

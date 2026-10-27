@@ -52,10 +52,26 @@ export type TxnLike = {
  * Calculates cash balance for one fund.
  * Existing transactions without a fund belong to the business fund.
  */
-export function cashBalance(txns: TxnLike[], fund: Fund = "business") {
+export function cashBalance(
+  txns: TxnLike[],
+  fund: "business" | "manager" | "custody" = "business",
+) {
   return txns
-    .filter((t) => (t.fund ?? "business") === fund)
-    .reduce((sum, t) => sum + (t.type === "receipt" ? n(t.amount) : -n(t.amount)), 0);
+    .filter((t) => {
+      const transactionFund = (
+        t as TxnLike & { fund?: string | null }
+      ).fund;
+
+      // تراکنش‌های قدیمی فاقد fund متعلق به صندوق کسب‌وکارند.
+      return transactionFund == null
+        ? fund === "business"
+        : transactionFund === fund;
+    })
+    .reduce(
+      (sum, t) =>
+        sum + (t.type === "receipt" ? n(t.amount) : -n(t.amount)),
+      0,
+    );
 }
 
 export type SettlementLike = {

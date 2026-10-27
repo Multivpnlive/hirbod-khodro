@@ -43,6 +43,34 @@
       "when": 1793059000001,
       "tag": "0005_customers_receipts_brokerage",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793090001000,
+      "tag": "0006_custody_and_customer_scoping",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793090002000,
+      "tag": "0007_hawalas_and_conversion",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793090003000,
+      "tag": "0008_brokerage_extensions",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793090004000,
+      "tag": "0009_fine_grained_permissions",
+      "breakpoints": true
     }
   ]
 }
