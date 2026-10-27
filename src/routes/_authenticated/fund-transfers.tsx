@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/AppShell";
 import { JalaliDateField } from "@/components/JalaliDateField";
-import { FeatureLinks } from "@/components/FeatureLinks";
 import { usePerms } from "@/lib/data";
 import { amountValue, errorText, faMoney, faNumber } from "@/lib/feature-utils";
 import { todayIso } from "@/lib/jalali";
@@ -62,7 +61,6 @@ function FundTransfersPage() {
   if (!isAdmin) return <div className="space-y-3"><PageHeader title="انتقال وجه امانی" /><p className="rounded-lg border p-4">مشاهده و انتقال وجوه امانی فقط برای مدیر مجاز است.</p></div>;
   return <div className="space-y-5" dir="rtl">
     <PageHeader title="انتقال از امانی مشتری به کسب‌وکار" />
-    <FeatureLinks />
     <div className="rounded-xl border bg-card p-4 text-sm leading-7 text-muted-foreground">این عملیات پول جدیدی ایجاد نمی‌کند: مانده امانی مشتری را کاهش می‌دهد و همان مبلغ را به وجوه قابل‌استفاده کسب‌وکار تخصیص می‌دهد. از این مسیر برای واریز فیزیکی جدید استفاده نکن؛ واریز فیزیکی باید یک تراکنش `receipt` با `fund=custody` باشد.</div>
     <form onSubmit={createTransfer} className="grid gap-3 rounded-xl border bg-card p-4 md:grid-cols-2 xl:grid-cols-3">
       <h2 className="font-semibold md:col-span-2 xl:col-span-3">ثبت انتقال</h2>

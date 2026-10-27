@@ -3,7 +3,6 @@ import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/AppShell";
-import { FeatureLinks } from "@/components/FeatureLinks";
 import { usePerms } from "@/lib/data";
 import { amountValue, errorText, faMoney, faNumber } from "@/lib/feature-utils";
 
@@ -46,7 +45,6 @@ function ReceivablesPage() {
   const totalOutstanding = receivables.reduce((s, r) => s + Number(r.outstanding), 0);
   return <div className="space-y-5" dir="rtl">
     <PageHeader title="مطالبات فروش خودرو" />
-    <FeatureLinks />
     <div className="grid gap-3 sm:grid-cols-3"><div className="rounded-xl border bg-card p-4"><div className="text-sm text-muted-foreground">خودروهای فروخته‌شده</div><div className="mt-1 text-2xl font-bold">{faNumber(cars.length)}</div></div><div className="rounded-xl border bg-card p-4"><div className="text-sm text-muted-foreground">جمع دریافت‌های تخصیص‌یافته</div><div className="mt-1 text-2xl font-bold">{faMoney(receivables.reduce((s, r) => s + Number(r.received), 0))}</div></div><div className="rounded-xl border bg-card p-4"><div className="text-sm text-muted-foreground">مانده مطالبات</div><div className="mt-1 text-2xl font-bold">{faMoney(totalOutstanding)}</div></div></div>
     <p className="rounded-lg border bg-card p-3 text-sm leading-7 text-muted-foreground">برای ثبت وصول، به بخش تراکنش‌ها برو و یک «دریافت» با همان خودرو و صندوق کسب‌وکار ثبت کن. تریگر دیتابیس آن را به فروش تخصیص می‌دهد؛ این صفحه فقط مانده را از دریافت‌ها و تعدیلات محاسبه می‌کند و دریافت تکراری نمی‌سازد.</p>
     <section className="space-y-3"><h2 className="font-semibold">وضعیت هر فروش</h2>

@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PageHeader, Stat } from "@/components/AppShell";
-import { FeatureLinks } from "@/components/FeatureLinks";
 import { useAllData } from "@/lib/data";
 import { carProfit, cashBalance } from "@/lib/finance";
 import { fmt, toman, statusLabel } from "@/lib/format";
@@ -40,7 +39,6 @@ function Dashboard() {
   return (
     <div>
       <PageHeader title="داشبورد مدیریتی" />
-      <FeatureLinks />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Stat label="مجموع سرمایه شرکا" value={toman(s.capital)} />
         <Stat label="ارزش معاملات" value={toman(s.tradeValue)} />

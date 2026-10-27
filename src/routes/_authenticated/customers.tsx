@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/AppShell";
 import { usePerms } from "@/lib/data";
-import { FeatureLinks } from "@/components/FeatureLinks";
 import { errorText } from "@/lib/feature-utils";
 
 export const Route = createFileRoute("/_authenticated/customers")({
@@ -81,7 +80,6 @@ function CustomersPage() {
   return (
     <div className="space-y-5" dir="rtl">
       <PageHeader title="مشتریان" />
-      <FeatureLinks />
       {isAdmin && <form onSubmit={createCustomer} className="grid gap-3 rounded-xl border bg-card p-4 md:grid-cols-2">
         <h2 className="font-semibold md:col-span-2">ثبت مشتری جدید</h2>
         <label className="grid gap-1 text-sm">نام و نام خانوادگی<input name="name" required className="rounded-md border bg-background px-3 py-2" /></label>

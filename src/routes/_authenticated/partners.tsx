@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Plus, Link2, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PermOnly, PageHeader } from "@/components/AppShell";
-import { FeatureLinks } from "@/components/FeatureLinks";
 import { PartnerFeaturePermissions } from "@/components/PartnerFeaturePermissions";
 import { PERM_LABELS, useAllData, usePerms, type Partner, type Perms } from "@/lib/data";
 import { partnerSummary } from "@/lib/summary";
@@ -37,7 +36,6 @@ function Partners() {
   return (
     <div>
       <PageHeader title="شرکا" action={isAdmin ? <AddPartner /> : undefined} />
-      <FeatureLinks />
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
         {d.partners.map((p) => {
           const s = partnerSummary(p.id, d);

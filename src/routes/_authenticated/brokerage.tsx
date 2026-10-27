@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/AppShell";
 import { JalaliDateField } from "@/components/JalaliDateField";
-import { FeatureLinks } from "@/components/FeatureLinks";
 import { usePerms } from "@/lib/data";
 import { amountValue, errorText, faMoney, faNumber } from "@/lib/feature-utils";
 import { todayIso } from "@/lib/jalali";
@@ -122,7 +121,6 @@ function BrokeragePage() {
 
   return <div className="space-y-5" dir="rtl">
     <PageHeader title="کارگزاری و کمیسیون" />
-    <FeatureLinks />
     <div className="rounded-xl border bg-card p-4 text-sm leading-7 text-muted-foreground">ارزش کل معامله درآمد نیست. فقط کمیسیون توافق‌شده، پس از کسر هزینه‌های کسب‌وکار، درآمد کارگزاری است. وجه مشتری و هزینه‌های قابل‌بازپرداخت به سود اضافه نمی‌شوند؛ بدون توافق تقسیم، سهم هیچ شریکی خودکار تعیین نمی‌شود.</div>
     {isAdmin && <form onSubmit={createDeal} className="grid gap-3 rounded-xl border bg-card p-4 md:grid-cols-2 xl:grid-cols-3">
       <h2 className="font-semibold md:col-span-2 xl:col-span-3">ثبت توافق کارگزاری</h2>

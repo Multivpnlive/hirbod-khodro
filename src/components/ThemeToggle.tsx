@@ -28,9 +28,8 @@ export function ThemeToggle() {
       title={theme === "dark" ? "تغییر به حالت روشن" : "تغییر به حالت تاریک"}
     >
       <span className="hirbod-theme-toggle__icon" aria-hidden="true">
-        {theme === "dark" ? "☀" : "☾"}
+        {theme === "dark" ? "☼" : "☾"}
       </span>
-      <span>{theme === "dark" ? "حالت روشن" : "حالت تاریک"}</span>
     </button>
   );
 }

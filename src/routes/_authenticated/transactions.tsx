@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, Stat } from "@/components/AppShell";
-import { FeatureLinks } from "@/components/FeatureLinks";
 import { useAllData, usePerms } from "@/lib/data";
 import { cashBalance } from "@/lib/finance";
 import { faDate, toman, txnLabel } from "@/lib/format";
@@ -57,7 +56,6 @@ function Transactions() {
   return (
     <div>
       <PageHeader title="دریافت‌ها، پرداخت‌ها و تسویه" action={perms.add_payment || perms.manage_settlements ? <AddTxn /> : undefined} />
-      <FeatureLinks />
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
         <Stat label="دریافت‌های کسب‌وکار" value={toman(sum("receipt"))} tone="pos" />
         <Stat label="پرداخت‌های کسب‌وکار" value={toman(sum("payment"))} />

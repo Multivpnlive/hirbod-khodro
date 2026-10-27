@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/AppShell";
 import { JalaliDateField } from "@/components/JalaliDateField";
-import { FeatureLinks } from "@/components/FeatureLinks";
 import { usePerms } from "@/lib/data";
 import { amountValue, errorText, faMoney, faNumber } from "@/lib/feature-utils";
 import { todayIso } from "@/lib/jalali";
@@ -162,7 +161,6 @@ function HawalasPage() {
   return (
     <div className="space-y-5" dir="rtl">
       <PageHeader title="حواله‌ها" />
-      <FeatureLinks />
       <div className="rounded-xl border bg-card p-4 text-sm leading-7 text-muted-foreground">سه مدل پشتیبانی می‌شود: خرید برای تبدیل به خودرو، خریدوفروش حواله بدون تحویل خودرو، و سفارش مشتری با وجه امانی. تبدیل حواله به خودرو تراکنش خرید دوم نمی‌سازد.</div>
       {isAdmin && <form onSubmit={createHawala} className="grid gap-3 rounded-xl border bg-card p-4 md:grid-cols-2 xl:grid-cols-3">
         <h2 className="font-semibold md:col-span-2 xl:col-span-3">ثبت حواله جدید</h2>
