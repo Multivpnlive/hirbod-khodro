@@ -1,22 +1,43 @@
 import type { Car, Expense, Investment, Txn } from "@/lib/data";
-import { carProfit, partnerShare } from "@/lib/finance";
+import { carPartnerLedger } from "@/lib/finance";
 
 export function partnerSummary(
   pid: string,
-  d: { cars: Car[]; expenses: Expense[]; investments: Investment[]; txns: Txn[] },
+  d: {
+    cars: Car[];
+    expenses: Expense[];
+    investments: Investment[];
+    txns: Txn[];
+  },
 ) {
   const mine = d.investments.filter((i) => i.partner_id === pid);
-  const capital = mine.reduce((a, i) => a + Number(i.amount), 0);
-  let profit = 0;
-  for (const inv of mine) {
-    const car = d.cars.find((c) => c.id === inv.car_id);
-    if (!car) continue;
-    const p = carProfit(car, d.expenses);
-    if (p === null) continue;
-    const total = d.investments.filter((i) => i.car_id === car.id).reduce((a, i) => a + Number(i.amount), 0);
-    profit += partnerShare(p, Number(inv.amount), total);
-  }
-  const settled = d.txns.filter((t) => t.partner_id === pid && t.type === "settlement").reduce((a, t) => a + Number(t.amount), 0);
-  return { capital, profit, settled, due: profit - settled, deals: mine.length };
-}
 
+  const capital = mine.reduce((sum, i) => sum + Number(i.amount), 0);
+
+  const soldCarIds = new Set(d.cars.filter((car) => car.status === "sold").map((car) => car.id));
+
+  const soldInvestments = mine.filter((i) => soldCarIds.has(i.car_id));
+
+  const soldCapital = soldInvestments.reduce((sum, i) => sum + Number(i.amount), 0);
+
+  const soldLedger = d.cars
+    .filter((car) => car.status === "sold")
+    .flatMap((car) =>
+      carPartnerLedger(car, d.expenses, d.investments, d.txns).filter(
+        (entry) => entry.partner_id === pid,
+      ),
+    );
+
+  const profit = soldLedger.reduce((sum, entry) => sum + entry.profit, 0);
+  const settled = soldLedger.reduce((sum, entry) => sum + entry.settled, 0);
+  const due = soldLedger.reduce((sum, entry) => sum + entry.due, 0);
+
+  return {
+    capital,
+    soldCapital,
+    profit,
+    settled,
+    due,
+    deals: mine.length,
+  };
+}

@@ -29,6 +29,20 @@
       "when": 1792984479725,
       "tag": "0003_partner_permissions_and_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793059000000,
+      "tag": "0004_cash_cap_and_funds",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793059000001,
+      "tag": "0005_customers_receipts_brokerage",
+      "breakpoints": true
     }
   ]
 }

@@ -11,7 +11,13 @@ import { toman } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Field } from "@/components/form-bits";
 
 export const Route = createFileRoute("/_authenticated/partners")({
@@ -36,14 +42,34 @@ function Partners() {
             <div key={p.id} className="card-elevated p-4">
               <div className="flex items-center justify-between">
                 <div className="font-bold">{p.name}</div>
-                {p.user_id && <span className="flex items-center gap-1 text-xs text-success"><Link2 className="size-3" /> حساب متصل</span>}
+                {p.user_id && (
+                  <span className="flex items-center gap-1 text-xs text-success">
+                    <Link2 className="size-3" /> حساب متصل
+                  </span>
+                )}
               </div>
-              <div className="text-xs text-muted-foreground mt-1" dir="ltr">{p.email || p.phone}</div>
+              <div className="text-xs text-muted-foreground mt-1" dir="ltr">
+                {p.email || p.phone}
+              </div>
               <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
-                <div><div className="text-xs text-muted-foreground">سرمایه در معاملات</div>{toman(s.capital)}</div>
-                <div><div className="text-xs text-muted-foreground">تعداد معامله</div>{s.deals}</div>
-                <div><div className="text-xs text-muted-foreground">سهم سود/زیان</div><span className={s.profit >= 0 ? "text-success" : "text-destructive"}>{toman(s.profit)}</span></div>
-                <div><div className="text-xs text-muted-foreground">مانده قابل تسویه</div><b>{toman(s.due)}</b></div>
+                <div>
+                  <div className="text-xs text-muted-foreground">سرمایه در معاملات</div>
+                  {toman(s.capital)}
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">تعداد معامله</div>
+                  {s.deals}
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">سهم سود/زیان</div>
+                  <span className={s.profit >= 0 ? "text-success" : "text-destructive"}>
+                    {toman(s.profit)}
+                  </span>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">مانده بدهی به شریک</div>
+                  <b>{toman(s.due)}</b>
+                </div>
               </div>
               {isAdmin && (
                 <div className="mt-4 border-t pt-3">
@@ -75,7 +101,11 @@ function PermissionsEditor({ partner }: { partner: Partner }) {
   const qc = useQueryClient();
 
   async function load() {
-    const { data } = await supabase.from("partner_permissions").select("*").eq("partner_id", partner.id).maybeSingle();
+    const { data } = await supabase
+      .from("partner_permissions")
+      .select("*")
+      .eq("partner_id", partner.id)
+      .maybeSingle();
     setPerms(
       data
         ? {
@@ -107,27 +137,45 @@ function PermissionsEditor({ partner }: { partner: Partner }) {
       { onConflict: "partner_id" },
     );
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("مجوزها ذخیره شد");
     qc.invalidateQueries({ queryKey: ["my-perms"] });
     setOpen(false);
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) load(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (v) load();
+      }}
+    >
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full"><ShieldCheck className="size-4" /> مجوزهای دسترسی</Button>
+        <Button variant="outline" size="sm" className="w-full">
+          <ShieldCheck className="size-4" /> مجوزهای دسترسی
+        </Button>
       </DialogTrigger>
       <DialogContent dir="rtl">
-        <DialogHeader><DialogTitle>مجوزهای {partner.name}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>مجوزهای {partner.name}</DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
           {PERM_LABELS.map(({ key, label }) => (
             <label key={key} className="flex items-center justify-between gap-3 text-sm">
               {label}
-              <Switch checked={perms[key]} onCheckedChange={(v) => setPerms((s) => ({ ...s, [key]: v }))} />
+              <Switch
+                checked={perms[key]}
+                onCheckedChange={(v) => setPerms((s) => ({ ...s, [key]: v }))}
+              />
             </label>
           ))}
-          <Button className="w-full" onClick={save} disabled={busy}>ذخیره مجوزها</Button>
+          <Button className="w-full" onClick={save} disabled={busy}>
+            ذخیره مجوزها
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -145,20 +193,35 @@ function AddPartner() {
       email: String(f.get("email") || "").trim() || null,
       phone: String(f.get("phone") || ""),
     });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("شریک اضافه شد");
     qc.invalidateQueries({ queryKey: ["all-data"] });
     setOpen(false);
   }
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button><Plus className="size-4" /> شریک جدید</Button></DialogTrigger>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="size-4" /> شریک جدید
+        </Button>
+      </DialogTrigger>
       <DialogContent dir="rtl">
-        <DialogHeader><DialogTitle>افزودن شریک</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>افزودن شریک</DialogTitle>
+        </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
-          <Field label="نام"><Input name="name" required /></Field>
-          <Field label="ایمیل (برای دسترسی شریک به حساب خودش)"><Input name="email" type="email" dir="ltr" /></Field>
-          <Field label="تلفن"><Input name="phone" dir="ltr" /></Field>
+          <Field label="نام">
+            <Input name="name" required />
+          </Field>
+          <Field label="ایمیل (برای دسترسی شریک به حساب خودش)">
+            <Input name="email" type="email" dir="ltr" />
+          </Field>
+          <Field label="تلفن">
+            <Input name="phone" dir="ltr" />
+          </Field>
           <Button className="w-full">ذخیره</Button>
         </form>
       </DialogContent>
