@@ -111,3 +111,114 @@
 @utility bg-hero {
   background: var(--gradient-hero);
 }
+
+
+/* HIRBOD THEME: dark/light */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --background: 222 30% 5%;
+  --foreground: 210 25% 95%;
+  --card: 222 23% 10%;
+  --card-foreground: 210 25% 95%;
+  --popover: 222 23% 10%;
+  --popover-foreground: 210 25% 95%;
+  --primary: 187 95% 48%;
+  --primary-foreground: 222 35% 8%;
+  --secondary: 220 18% 15%;
+  --secondary-foreground: 210 25% 93%;
+  --muted: 220 18% 14%;
+  --muted-foreground: 215 13% 67%;
+  --accent: 187 55% 17%;
+  --accent-foreground: 185 95% 78%;
+  --border: 218 18% 21%;
+  --input: 218 18% 21%;
+  --ring: 187 95% 48%;
+  --sidebar-background: 211 52% 7%;
+  --sidebar-foreground: 210 20% 92%;
+  --sidebar-primary: 187 95% 48%;
+  --sidebar-primary-foreground: 222 35% 8%;
+  --sidebar-accent: 211 35% 13%;
+  --sidebar-accent-foreground: 187 95% 65%;
+  --sidebar-border: 211 25% 17%;
+  --sidebar-ring: 187 95% 48%;
+}
+
+html[data-theme="dark"] body {
+  color: #eaf2f8;
+  background:
+    radial-gradient(ellipse at 0% 15%, rgba(0, 190, 220, .16), transparent 32%),
+    radial-gradient(ellipse at 90% 95%, rgba(0, 130, 160, .09), transparent 28%),
+    #070a0f;
+}
+
+html[data-theme="dark"] .card-elevated,
+html[data-theme="dark"] [class*="bg-white"],
+html[data-theme="dark"] [class*="bg-card"] {
+  background-color: #131821 !important;
+  border-color: #293441 !important;
+  color: #eaf2f8;
+}
+
+html[data-theme="dark"] .text-muted-foreground {
+  color: #9baabd !important;
+}
+
+html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  color-scheme: dark;
+  color: #eaf2f8;
+  background-color: #0d131b;
+  border-color: #2b3847;
+}
+
+html[data-theme="dark"] table th {
+  color: #cbd6e2;
+  border-color: #293441;
+}
+
+.hirbod-theme-toggle {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 99999;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 10px 15px;
+  min-height: 44px;
+  border: 1px solid #0b6575;
+  border-radius: 999px;
+  background: #07313b;
+  color: #f0fbff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .18);
+  transition: background-color .18s ease, border-color .18s ease;
+}
+
+.hirbod-theme-toggle:hover {
+  background: #0b4653;
+  border-color: #10cde8;
+}
+
+.hirbod-theme-toggle__icon {
+  color: #18d7ef;
+  font-size: 18px;
+  line-height: 1;
+}
+
+html[data-theme="light"] .hirbod-theme-toggle {
+  background: #073c49;
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .hirbod-theme-toggle {
+    left: 10px;
+    bottom: 10px;
+  }
+}
