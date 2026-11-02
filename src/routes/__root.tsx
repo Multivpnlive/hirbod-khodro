@@ -76,6 +76,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { BrandingFavicon } from "@/components/BrandingFavicon";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -89,7 +90,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/hirbod-favicon.svg", type: "image/svg+xml" },
       { rel: "preconnect", href: "https://cdn.jsdelivr.net" },
       { rel: "stylesheet", href: "https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css" },
     ],
@@ -102,14 +103,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="fa" dir="rtl" data-theme="dark">
+    <html lang="fa" dir="rtl" data-theme="dark" data-palette="turquoise">
       <head>
         <HeadContent />
       </head>
       <body>
         {children}
         <Scripts />
-              <ThemeToggle />
+
 </body>
     </html>
   );
@@ -131,6 +132,8 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <ThemeToggle />
+      <BrandingFavicon />
       <Toaster position="top-center" richColors />
     </QueryClientProvider>
   );

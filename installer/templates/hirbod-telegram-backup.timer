@@ -1,0 +1,12 @@
+[Unit]
+Description=Hirbod Telegram Backup Schedule
+
+[Timer]
+OnBootSec=10min
+OnCalendar=hourly
+Persistent=true
+RandomizedDelaySec=60s
+Unit=hirbod-telegram-backup-scheduled.service
+
+[Install]
+WantedBy=timers.target

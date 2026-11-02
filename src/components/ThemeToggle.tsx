@@ -1,22 +1,45 @@
-import { useEffect, useState } from "react";
-
-type Theme = "dark" | "light";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  DEFAULT_APPEARANCE,
+  appearanceQueryKey,
+  applyAppearance,
+  persistAppearance,
+  useAppearance,
+} from "@/lib/appearance";
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const queryClient = useQueryClient();
+  const { data } = useAppearance();
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    const saved = window.localStorage.getItem("hirbod-theme");
-    const next: Theme = saved === "light" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
-    setTheme(next);
-  }, []);
+  const current = data ?? DEFAULT_APPEARANCE;
 
-  function toggleTheme() {
-    const next: Theme = theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
-    window.localStorage.setItem("hirbod-theme", next);
-    setTheme(next);
+  async function toggleTheme() {
+    if (busy) return;
+
+    const next = {
+      ...current,
+      color_mode: current.color_mode === "dark" ? "light" as const : "dark" as const,
+    };
+
+    setBusy(true);
+    applyAppearance(next);
+
+    try {
+      const saved = await persistAppearance(next);
+      queryClient.setQueryData(appearanceQueryKey(saved.user_id), saved);
+    } catch (error) {
+      applyAppearance(current);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "ذخیره حالت نمایش ناموفق بود."
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -24,11 +47,16 @@ export function ThemeToggle() {
       type="button"
       className="hirbod-theme-toggle"
       onClick={toggleTheme}
-      aria-label={theme === "dark" ? "فعال کردن حالت روشن" : "فعال کردن حالت تاریک"}
-      title={theme === "dark" ? "تغییر به حالت روشن" : "تغییر به حالت تاریک"}
+      disabled={busy || !data}
+      aria-label={current.color_mode === "dark"
+        ? "فعال کردن حالت روشن"
+        : "فعال کردن حالت تاریک"}
+      title={current.color_mode === "dark"
+        ? "تغییر به حالت روشن"
+        : "تغییر به حالت تاریک"}
     >
       <span className="hirbod-theme-toggle__icon" aria-hidden="true">
-        {theme === "dark" ? "☼" : "☾"}
+        {current.color_mode === "dark" ? "☼" : "☾"}
       </span>
     </button>
   );

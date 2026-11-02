@@ -43,10 +43,12 @@ function Partners() {
             <div key={p.id} className="card-elevated p-4">
               <div className="flex items-center justify-between">
                 <div className="font-bold">{p.name}</div>
-                {p.user_id && (
+                {p.user_id ? (
                   <span className="flex items-center gap-1 text-xs text-success">
-                    <Link2 className="size-3" /> حساب متصل
+                    <Link2 className="size-3" /> حساب کاربری با دسترسی محدود
                   </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">پرونده مالی مستقل · بدون حساب ورود</span>
                 )}
               </div>
               <div className="text-xs text-muted-foreground mt-1" dir="ltr">
@@ -72,10 +74,15 @@ function Partners() {
                   <b>{toman(s.due)}</b>
                 </div>
               </div>
-              {isAdmin && (
+              {isAdmin && p.user_id && (
                 <div className="mt-4 border-t pt-3">
                   <PermissionsEditor partner={p} />
                   <PartnerFeaturePermissions partnerId={p.id} />
+                </div>
+              )}
+              {isAdmin && !p.user_id && (
+                <div className="mt-4 border-t pt-3 text-xs leading-6 text-muted-foreground">
+                  این شریک فقط یک پرونده مالی برای ثبت سرمایه و محاسبه سهم است و برای او حساب ورود لازم نیست.
                 </div>
               )}
             </div>
@@ -218,7 +225,7 @@ function AddPartner() {
           <Field label="نام">
             <Input name="name" required />
           </Field>
-          <Field label="ایمیل (برای دسترسی شریک به حساب خودش)">
+          <Field label="ایمیل تماس (اختیاری؛ بدون اتصال خودکار به حساب کاربری)">
             <Input name="email" type="email" dir="ltr" />
           </Field>
           <Field label="تلفن">

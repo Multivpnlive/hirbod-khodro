@@ -13,6 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated/backup'
+import { Route as AuthenticatedBrandingRouteImport } from './routes/_authenticated/branding'
 import { Route as AuthenticatedBrokerageRouteImport } from './routes/_authenticated/brokerage'
 import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -23,8 +26,10 @@ import { Route as AuthenticatedPartnersRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedReceivablesRouteImport } from './routes/_authenticated/receivables'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedTransactionsRouteImport } from './routes/_authenticated/transactions'
+import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedCarsIndexRouteImport } from './routes/_authenticated/cars.index'
 import { Route as AuthenticatedCarsIdRouteImport } from './routes/_authenticated/cars.$id'
+import { Route as ApiBackupRestoreRouteImport } from './routes/api/backup/restore'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -44,6 +49,21 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBackupRoute = AuthenticatedBackupRouteImport.update({
+  id: '/backup',
+  path: '/backup',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBrandingRoute = AuthenticatedBrandingRouteImport.update({
+  id: '/branding',
+  path: '/branding',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedBrokerageRoute = AuthenticatedBrokerageRouteImport.update({
   id: '/brokerage',
@@ -98,6 +118,11 @@ const AuthenticatedTransactionsRoute =
     path: '/transactions',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedUsersRoute = AuthenticatedUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCarsIndexRoute = AuthenticatedCarsIndexRouteImport.update({
   id: '/cars/',
   path: '/cars/',
@@ -108,11 +133,19 @@ const AuthenticatedCarsIdRoute = AuthenticatedCarsIdRouteImport.update({
   path: '/cars/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiBackupRestoreRoute = ApiBackupRestoreRouteImport.update({
+  id: '/api/backup/restore',
+  path: '/api/backup/restore',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/account': typeof AuthenticatedAccountRoute
+  '/backup': typeof AuthenticatedBackupRoute
+  '/branding': typeof AuthenticatedBrandingRoute
   '/brokerage': typeof AuthenticatedBrokerageRoute
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -123,13 +156,18 @@ export interface FileRoutesByFullPath {
   '/receivables': typeof AuthenticatedReceivablesRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/transactions': typeof AuthenticatedTransactionsRoute
+  '/users': typeof AuthenticatedUsersRoute
   '/cars/$id': typeof AuthenticatedCarsIdRoute
+  '/api/backup/restore': typeof ApiBackupRestoreRoute
   '/cars/': typeof AuthenticatedCarsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/account': typeof AuthenticatedAccountRoute
+  '/backup': typeof AuthenticatedBackupRoute
+  '/branding': typeof AuthenticatedBrandingRoute
   '/brokerage': typeof AuthenticatedBrokerageRoute
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -140,7 +178,9 @@ export interface FileRoutesByTo {
   '/receivables': typeof AuthenticatedReceivablesRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/transactions': typeof AuthenticatedTransactionsRoute
+  '/users': typeof AuthenticatedUsersRoute
   '/cars/$id': typeof AuthenticatedCarsIdRoute
+  '/api/backup/restore': typeof ApiBackupRestoreRoute
   '/cars': typeof AuthenticatedCarsIndexRoute
 }
 export interface FileRoutesById {
@@ -149,6 +189,9 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/account': typeof AuthenticatedAccountRoute
+  '/_authenticated/backup': typeof AuthenticatedBackupRoute
+  '/_authenticated/branding': typeof AuthenticatedBrandingRoute
   '/_authenticated/brokerage': typeof AuthenticatedBrokerageRoute
   '/_authenticated/customers': typeof AuthenticatedCustomersRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -159,7 +202,9 @@ export interface FileRoutesById {
   '/_authenticated/receivables': typeof AuthenticatedReceivablesRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/transactions': typeof AuthenticatedTransactionsRoute
+  '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/_authenticated/cars/$id': typeof AuthenticatedCarsIdRoute
+  '/api/backup/restore': typeof ApiBackupRestoreRoute
   '/_authenticated/cars/': typeof AuthenticatedCarsIndexRoute
 }
 export interface FileRouteTypes {
@@ -168,6 +213,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/account'
+    | '/backup'
+    | '/branding'
     | '/brokerage'
     | '/customers'
     | '/dashboard'
@@ -178,13 +226,18 @@ export interface FileRouteTypes {
     | '/receivables'
     | '/reports'
     | '/transactions'
+    | '/users'
     | '/cars/$id'
+    | '/api/backup/restore'
     | '/cars/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/account'
+    | '/backup'
+    | '/branding'
     | '/brokerage'
     | '/customers'
     | '/dashboard'
@@ -195,7 +248,9 @@ export interface FileRouteTypes {
     | '/receivables'
     | '/reports'
     | '/transactions'
+    | '/users'
     | '/cars/$id'
+    | '/api/backup/restore'
     | '/cars'
   id:
     | '__root__'
@@ -203,6 +258,9 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/account'
+    | '/_authenticated/backup'
+    | '/_authenticated/branding'
     | '/_authenticated/brokerage'
     | '/_authenticated/customers'
     | '/_authenticated/dashboard'
@@ -213,7 +271,9 @@ export interface FileRouteTypes {
     | '/_authenticated/receivables'
     | '/_authenticated/reports'
     | '/_authenticated/transactions'
+    | '/_authenticated/users'
     | '/_authenticated/cars/$id'
+    | '/api/backup/restore'
     | '/_authenticated/cars/'
   fileRoutesById: FileRoutesById
 }
@@ -222,6 +282,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiBackupRestoreRoute: typeof ApiBackupRestoreRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -253,6 +314,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/account': {
+      id: '/_authenticated/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AuthenticatedAccountRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/backup': {
+      id: '/_authenticated/backup'
+      path: '/backup'
+      fullPath: '/backup'
+      preLoaderRoute: typeof AuthenticatedBackupRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/branding': {
+      id: '/_authenticated/branding'
+      path: '/branding'
+      fullPath: '/branding'
+      preLoaderRoute: typeof AuthenticatedBrandingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/brokerage': {
       id: '/_authenticated/brokerage'
@@ -324,6 +406,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTransactionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/users': {
+      id: '/_authenticated/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AuthenticatedUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cars/': {
       id: '/_authenticated/cars/'
       path: '/cars'
@@ -338,10 +427,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCarsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/backup/restore': {
+      id: '/api/backup/restore'
+      path: '/api/backup/restore'
+      fullPath: '/api/backup/restore'
+      preLoaderRoute: typeof ApiBackupRestoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
+  AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
+  AuthenticatedBrandingRoute: typeof AuthenticatedBrandingRoute
   AuthenticatedBrokerageRoute: typeof AuthenticatedBrokerageRoute
   AuthenticatedCustomersRoute: typeof AuthenticatedCustomersRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -352,11 +451,15 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReceivablesRoute: typeof AuthenticatedReceivablesRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedTransactionsRoute: typeof AuthenticatedTransactionsRoute
+  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
   AuthenticatedCarsIdRoute: typeof AuthenticatedCarsIdRoute
   AuthenticatedCarsIndexRoute: typeof AuthenticatedCarsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAccountRoute: AuthenticatedAccountRoute,
+  AuthenticatedBackupRoute: AuthenticatedBackupRoute,
+  AuthenticatedBrandingRoute: AuthenticatedBrandingRoute,
   AuthenticatedBrokerageRoute: AuthenticatedBrokerageRoute,
   AuthenticatedCustomersRoute: AuthenticatedCustomersRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
@@ -367,6 +470,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReceivablesRoute: AuthenticatedReceivablesRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedTransactionsRoute: AuthenticatedTransactionsRoute,
+  AuthenticatedUsersRoute: AuthenticatedUsersRoute,
   AuthenticatedCarsIdRoute: AuthenticatedCarsIdRoute,
   AuthenticatedCarsIndexRoute: AuthenticatedCarsIndexRoute,
 }
@@ -379,6 +483,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiBackupRestoreRoute: ApiBackupRestoreRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

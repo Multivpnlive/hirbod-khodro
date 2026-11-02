@@ -73,9 +73,20 @@ export function PartnerFeaturePermissions({ partnerId }: Props) {
     <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setOpen((v) => !v)}>
       {open ? "بستن مجوزهای مالی جدید" : "مجوزهای مشتری، حواله و کارگزاری"}
     </Button>
-    {open && <div className="mt-3 space-y-3 rounded-lg border p-3">
-      {LABELS.map(({ key, label }) => <label key={key} className="flex items-center justify-between gap-3 text-sm">{label}<Switch checked={flags[key]} onCheckedChange={(checked) => setFlags((old) => ({ ...old, [key]: checked }))} /></label>)}
-      <Button type="button" className="w-full" disabled={busy} onClick={() => void save()}>{busy ? "در حال ذخیره…" : "ذخیره مجوزهای جدید"}</Button>
+    {open && <div className="partner-permissions-panel mt-3 space-y-3 rounded-xl border p-4">
+      {LABELS.map(({ key, label }) => (
+        <label key={key} className="partner-permission-row flex min-h-11 cursor-pointer items-center justify-between gap-4 rounded-lg px-3 py-2 text-sm font-medium">
+          <span>{label}</span>
+          <Switch
+            checked={flags[key]}
+            aria-label={label}
+            onCheckedChange={(checked) => setFlags((old) => ({ ...old, [key]: checked }))}
+          />
+        </label>
+      ))}
+      <Button type="button" className="w-full" disabled={busy} onClick={() => void save()}>
+        {busy ? "در حال ذخیره…" : "ذخیره مجوزهای جدید"}
+      </Button>
     </div>}
   </div>;
 }

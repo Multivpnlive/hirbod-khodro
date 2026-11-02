@@ -38,7 +38,7 @@ SQL
 echo "===== Full database backup ====="
 docker exec -u postgres "$DB_CONTAINER" pg_dump -U postgres -d postgres -Fc > "$BACKUP"
 test -s "$BACKUP"
-pg_restore -l "$BACKUP" >/dev/null
+docker exec -i -u postgres "$DB_CONTAINER" pg_restore -l < "$BACKUP" >/dev/null
 chmod 600 "$BACKUP"
 echo "Backup verified: $BACKUP"
 

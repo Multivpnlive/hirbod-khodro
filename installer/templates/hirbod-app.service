@@ -1,0 +1,24 @@
+[Unit]
+Description=Hirbod Khodro Application
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/hirbod/app
+EnvironmentFile=/etc/hirbod/hirbod-runtime.env
+EnvironmentFile=/etc/hirbod/hirbod-admin.env
+ExecStart=/usr/local/bin/node /opt/hirbod/app/.output/server/index.mjs
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+KillSignal=SIGTERM
+UMask=0077
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

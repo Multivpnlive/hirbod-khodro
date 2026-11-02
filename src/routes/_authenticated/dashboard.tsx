@@ -34,7 +34,7 @@ function Dashboard() {
   }, [cars, expenses, investments, txns]);
 
   if (isLoading) return <div className="text-muted-foreground">در حال بارگذاری…</div>;
-  const colors = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)"];
+  const colors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-5))"];
 
   return (
     <div>
@@ -51,13 +51,13 @@ function Dashboard() {
           <div className="h-64" dir="ltr">
             <ResponsiveContainer>
               <BarChart data={s.monthly.map((x) => ({ ...x, v: Math.round(x.v / 1e6) }))}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="m" fontSize={12} />
                 <YAxis fontSize={12} tickFormatter={(v) => fmt(v)} />
                 <Tooltip formatter={(v: number) => fmt(v)} />
                 <Bar dataKey="v" radius={[6, 6, 0, 0]}>
                   {s.monthly.map((x, i) => (
-                    <Cell key={i} fill={x.v >= 0 ? "var(--chart-3)" : "var(--chart-4)"} />
+                    <Cell key={i} fill={x.v >= 0 ? "hsl(var(--chart-2))" : "hsl(var(--chart-4))"} />
                   ))}
                 </Bar>
               </BarChart>

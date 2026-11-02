@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Car, ShieldCheck, PieChart, Users } from "lucide-react";
+import { useEffect } from "react";
+import { useBranding } from "@/lib/branding";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
@@ -24,32 +26,43 @@ const features = [
 ];
 
 function Index() {
+  const { branding } = useBranding();
+  useEffect(() => {
+    document.title = branding.app_name;
+  }, [branding.app_name]);
   return (
-    <div className="min-h-screen bg-hero text-primary-foreground">
+    <div className="hero-landing min-h-screen">
       <div className="mx-auto max-w-5xl px-6 py-16 md:py-28">
-        <div className="text-sm opacity-80">هیربد خودرو</div>
-        <h1 className="mt-4 text-4xl md:text-6xl font-black leading-tight">
+        <div className="hero-eyebrow flex items-center gap-3 text-sm">{branding.logo_url && <img src={branding.logo_url} alt="" className="size-10 rounded-lg bg-white object-contain p-1" />}{branding.company_name}</div>
+        <h1 className="hero-title mt-4 text-4xl md:text-6xl font-black leading-tight">
           حساب هر معامله،
           <br />
-          <span className="text-accent">سهم هر شریک.</span>
+          <span className="hero-accent">سهم هر شریک.</span>
         </h1>
-        <p className="mt-6 max-w-xl opacity-85 leading-8">
+        <p className="hero-copy mt-6 max-w-xl leading-8">
           خریدوفروش خودرو، سرمایه‌گذاری و تسویه‌حساب شرکا را یک‌جا مدیریت کنید؛ سود و زیان هر خودرو خودکار محاسبه و بین شرکا تقسیم می‌شود.
         </p>
         <div className="mt-8 flex gap-3">
-          <Button asChild size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
+          <Button asChild size="lg" className="hero-cta">
             <Link to="/auth">ورود / ثبت‌نام</Link>
           </Button>
         </div>
         <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f) => (
-            <div key={f.t} className="rounded-xl border border-primary-foreground/15 bg-primary-foreground/5 p-5">
-              <f.icon className="size-6 text-accent" />
-              <div className="mt-3 font-bold">{f.t}</div>
-              <div className="mt-1 text-sm opacity-75">{f.d}</div>
+            <div key={f.t} className="hero-feature-card rounded-xl border p-5">
+              <f.icon className="hero-feature-icon size-6" />
+              <div className="hero-feature-title mt-3 font-bold">{f.t}</div>
+              <div className="hero-feature-copy mt-1 text-sm">{f.d}</div>
             </div>
           ))}
         </div>
+        {(branding.contact_phone || branding.contact_email || branding.website) && (
+          <footer className="mt-12 flex flex-wrap gap-4 text-sm text-muted-foreground">
+            {branding.contact_phone && <span>تماس: {branding.contact_phone}</span>}
+            {branding.contact_email && <span dir="ltr">{branding.contact_email}</span>}
+            {branding.website && <a href={branding.website} target="_blank" rel="noreferrer" dir="ltr">{branding.website}</a>}
+          </footer>
+        )}
       </div>
     </div>
   );
