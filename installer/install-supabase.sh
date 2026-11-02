@@ -13,6 +13,23 @@ die() { echo "[ERROR] $*" >&2; exit 1; }
 [[ -f "$SETUP" ]] || die "Supabase setup script missing"
 [[ ! -e "$ROOT/supabase-project" ]] || die "Supabase directory already exists"
 
+
+# Install Docker from Ubuntu repositories; do not depend on download.docker.com.
+. /etc/os-release
+[[ "${ID:-}" == "ubuntu" && "${VERSION_ID:-}" =~ ^(22\.04|24\.04)$ ]] || die "Ubuntu 22.04 or 24.04 required"
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+
+PACKAGES=(git openssl jq ca-certificates curl gnupg)
+command -v docker >/dev/null 2>&1 || PACKAGES+=(docker.io)
+docker compose version >/dev/null 2>&1 || PACKAGES+=(docker-compose-v2)
+
+apt-get install -y "${PACKAGES[@]}"
+systemctl enable --now docker || die "Docker service could not start"
+docker info >/dev/null 2>&1 || die "Docker daemon is not ready"
+docker compose version >/dev/null 2>&1 || die "Docker Compose plugin is unavailable"
+
 LOG="$(mktemp /run/hirbod-setup.XXXXXX)"
 chmod 600 "$LOG"
 trap 'rm -f "$LOG"' EXIT
@@ -20,6 +37,7 @@ trap 'rm -f "$LOG"' EXIT
 cd "$ROOT"
 
 if ! sh "$SETUP" \
+    --skip-deps \
     --project-dir supabase-project \
     --ref "$REF" -y >"$LOG" 2>&1; then
     die "Supabase setup failed. No secret output was displayed."

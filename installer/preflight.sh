@@ -148,8 +148,9 @@ fi
 if command -v ufw >/dev/null 2>&1; then
   UFW_STATUS="$(ufw status 2>/dev/null | head -n 1 || true)"
   case "$UFW_STATUS" in
-    *active*) warn "UFW is active; firewall rules must be reviewed before deployment" ;;
-    *)        ok "UFW is not active" ;;
+    "Status: active")   warn "UFW is active; firewall rules must be reviewed before deployment" ;;
+    "Status: inactive") ok "UFW is not active" ;;
+    *)                  warn "Could not determine UFW status" ;;
   esac
 else
   warn "UFW is not installed; firewall setup will be handled by the installer"
