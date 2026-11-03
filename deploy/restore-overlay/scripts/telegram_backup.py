@@ -1334,7 +1334,7 @@ def restore_archive_v3(archive_path, job_id):
             raise RuntimeError("ساختار scripts در package.json معتبر نیست.")
         package_scripts["build"] = "node scripts/build.mjs"
         package_json_path.write_text(
-            json.dumps(package_data, ensure_ascii=False, indent=2) + "\\n",
+            json.dumps(package_data, ensure_ascii=False, indent=2) + "\n",
             encoding="utf-8",
         )
 
@@ -1452,11 +1452,29 @@ def restore_archive_v3(archive_path, job_id):
 
         progress("running", "services-start", 87, "راه‌اندازی سرویس‌های Supabase")
 
-        run_logged(
-            ["docker", "compose", "up", "-d", "--pull", "never"],
-            cwd=project_dir,
-            timeout=1800,
-        )
+        compose_command = [
+            "docker", "compose", "up", "-d", "--pull", "never"
+        ]
+
+        for attempt in range(1, 4):
+            try:
+                run_logged(
+                    compose_command,
+                    cwd=project_dir,
+                    timeout=1800,
+                )
+                break
+            except subprocess.CalledProcessError:
+                if attempt == 3:
+                    raise
+
+                with log_file.open("ab") as output:
+                    output.write(
+                        f"\nCompose startup attempt {attempt} failed; "
+                        f"retrying after {15 * attempt} seconds.\n".encode()
+                    )
+
+                time.sleep(15 * attempt)
 
         progress("running", "systemd", 92, "فعال‌سازی سرویس‌های برنامه و وب")
 

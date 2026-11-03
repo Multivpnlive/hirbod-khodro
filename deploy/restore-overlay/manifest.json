@@ -4,7 +4,7 @@
     "src/routes/api/backup/restore.ts": "5991c8c09e09be5d8bc41acd02770929f19d1545c3142f423449f16da38a891f",
     "src/routes/_authenticated/backup.tsx": "d63c9e1007feee34df63ec77d6241d64762ee24846da65650ca3baa6b569fb56",
     "src/lib/telegram-backup.functions.ts": "d21da8d0ffb6dc80641330ad16816fa63556df56ea641c9a2a1cc31b0f788faf",
-    "scripts/telegram_backup.py": "f32a0433c8347d7b9fece0986eaa7dbd87da980e2e5fb653ecc16f242adafdfe",
+    "scripts/telegram_backup.py": "8bda0f5668eaa82f0ceca22e33a4ce16e4931f1acdb52cbe15317234d527d430",
     "scripts/build.mjs": "fd6b7070f0f6189568a058b40cc24dd302e7d85b627925e2f28d3a6169daf29b"
   }
 }
