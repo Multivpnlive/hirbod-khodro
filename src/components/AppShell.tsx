@@ -1,7 +1,7 @@
 import { Link, Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { LayoutDashboard, Car, Database, Users, Wallet, FileBarChart, User, LogOut, MoreHorizontal, UserRound, ArrowLeftRight, ReceiptText, HandCoins, X, Settings, Palette } from "lucide-react";
+import { LayoutDashboard, Car, Database, Users, Wallet, FileBarChart, LogOut, MoreHorizontal, UserRound, ArrowLeftRight, ReceiptText, HandCoins, X, Settings, Palette } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe, usePerms, type PermKey } from "@/lib/data";
@@ -52,13 +52,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         ...(perms.view_all_partners ? [{ to: "/partners", label: "شرکا", icon: Users }] : []),
         ...((perms.view_transactions || perms.add_payment || perms.manage_settlements) ? [{ to: "/transactions", label: "تراکنش‌ها", icon: Wallet }] : []),
         ...(hasAnyAccess ? [{ to: "/reports", label: "گزارش‌ها", icon: FileBarChart }] : []),
-        ...(me?.isPartner || me?.linkedPartnerId ? [{ to: "/my", label: "حساب من", icon: User }] : []),
         ...staffFeatureNav,
         ...accountNav,
       ];
   const desktopNav = nav.filter((n) => n.to !== "/account");
   const mobileNav = nav.filter((n) => ["/dashboard", "/cars", "/partners", "/transactions"].includes(n.to)).slice(0, 4);
-  const showMoreActive = [...featureNav, ...accountNav, { to: "/my" }].some((n) => pathname.startsWith(n.to));
+  const showMoreActive = [...featureNav, ...accountNav].some((n) => pathname.startsWith(n.to));
 
   async function signOut() {
     await qc.cancelQueries();
@@ -164,10 +163,10 @@ export function Stat({ label, value, tone }: { label: string; value: string; ton
   );
 }
 
-/** Gates a page behind admin role or a specific partner permission. */
+/** Gates a page behind admin role or the relevant staff permission. */
 export function PermOnly({ perm, children }: { perm?: PermKey; children: ReactNode }) {
   const { isAdmin, perms, isLoading } = usePerms();
   if (isLoading) return <div className="text-muted-foreground">در حال بارگذاری…</div>;
-  if (!isAdmin && !(perm && perms[perm])) return <Navigate to="/my" replace />;
+  if (!isAdmin && !(perm && perms[perm])) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }

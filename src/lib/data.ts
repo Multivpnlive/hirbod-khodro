@@ -15,10 +15,9 @@ export function useMe() {
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
-      const [{ data: roles }, { data: staff }, { data: partner }] = await Promise.all([
+      const [{ data: roles }, { data: staff }] = await Promise.all([
         supabase.from("user_roles").select("role").eq("user_id", u.user.id),
         (supabase as any).from("staff_access").select("staff_role,is_active,linked_partner_id").eq("user_id", u.user.id).maybeSingle(),
-        supabase.from("partners").select("id").eq("user_id", u.user.id).maybeSingle(),
       ]);
       const isAdmin = !!roles?.some((r) => r.role === "admin");
       return {
@@ -27,8 +26,7 @@ export function useMe() {
         isStaff: !!staff,
         staffRole: staff?.staff_role ?? null,
         isActive: staff?.is_active !== false,
-        isPartner: !!partner,
-        linkedPartnerId: staff?.linked_partner_id ?? partner?.id ?? null,
+        linkedPartnerId: staff?.linked_partner_id ?? null,
       };
     },
   });
@@ -81,81 +79,107 @@ const NO_PERMS: Perms = {
   view_custody: false,
   view_receivables: false,
 };
+
 const ALL_PERMS: Perms = Object.fromEntries(
   Object.keys(NO_PERMS).map((key) => [key, true]),
 ) as Perms;
 
-/** Admins have all access. Staff rights are read from staff_permissions; linked partner rights remain separate. */
+export type StaffResource =
+  | "cars" | "partners" | "transactions" | "customers"
+  | "receivables" | "fund_transfers" | "brokerage" | "hawalas";
+
+export type StaffAction = "view" | "create" | "edit" | "delete";
+type StaffAccessMap = Record<StaffResource, Record<StaffAction, boolean>>;
+
+const STAFF_RESOURCES: StaffResource[] = [
+  "cars", "partners", "transactions", "customers",
+  "receivables", "fund_transfers", "brokerage", "hawalas",
+];
+
+function emptyStaffAccess(): StaffAccessMap {
+  return Object.fromEntries(
+    STAFF_RESOURCES.map((resource) => [
+      resource,
+      { view: false, create: false, edit: false, delete: false },
+    ]),
+  ) as StaffAccessMap;
+}
+
 export function usePerms() {
   const me = useMe();
   const isAdmin = !!me.data?.isAdmin;
+
   const q = useQuery({
     queryKey: ["my-perms"],
     enabled: !!me.data && !isAdmin,
-    queryFn: async (): Promise<Perms> => {
+    queryFn: async (): Promise<{ perms: Perms; staffAccess: StaffAccessMap }> => {
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return NO_PERMS;
+      if (!u.user) return { perms: NO_PERMS, staffAccess: emptyStaffAccess() };
 
       const { data: staff } = await (supabase as any)
         .from("staff_access")
         .select("is_active")
         .eq("user_id", u.user.id)
         .maybeSingle();
+
       if (staff) {
-        if (!staff.is_active) return NO_PERMS;
+        if (!staff.is_active) {
+          return { perms: NO_PERMS, staffAccess: emptyStaffAccess() };
+        }
+
         const { data: rows, error } = await (supabase as any)
           .from("staff_permissions")
           .select("resource,can_view,can_create,can_edit,can_delete")
           .eq("user_id", u.user.id);
+
         if (error) throw error;
-        const byResource = new Map<string, any>((rows ?? []).map((row: any) => [String(row.resource), row] as [string, any]));
-        const get = (resource: string, action: string) => Boolean(byResource.get(resource)?.[action]);
-        const { data: linkedPartner } = await supabase.from("partners").select("id").eq("user_id", u.user.id).maybeSingle();
-        const { data: partnerPermissions } = linkedPartner
-          ? await supabase.from("partner_permissions").select("*").eq("partner_id", linkedPartner.id).maybeSingle()
-          : { data: null };
+
+        const byResource = new Map<string, any>(
+          (rows ?? []).map((row: any) => [String(row.resource), row] as [string, any]),
+        );
+        const get = (resource: string, action: string) =>
+          Boolean(byResource.get(resource)?.[action]);
+
+        const staffAccess = emptyStaffAccess();
+        for (const resource of STAFF_RESOURCES) {
+          staffAccess[resource] = {
+            view: get(resource, "can_view"),
+            create: get(resource, "can_create"),
+            edit: get(resource, "can_edit"),
+            delete: get(resource, "can_delete"),
+          };
+        }
+
         return {
-          view_all_cars: get("cars", "can_view") || !!partnerPermissions?.can_view_all_cars,
-          create_car: get("cars", "can_create") || !!partnerPermissions?.can_create_car,
-          edit_car: get("cars", "can_edit") || !!partnerPermissions?.can_edit_car,
-          add_expense: get("cars", "can_create") || get("cars", "can_edit") || !!partnerPermissions?.can_add_expense,
-          add_payment: get("transactions", "can_create") || !!partnerPermissions?.can_add_payment,
-          view_transactions: get("transactions", "can_view") || !!partnerPermissions?.can_add_payment || !!partnerPermissions?.can_manage_settlements,
-          manage_settlements: get("transactions", "can_edit") || !!partnerPermissions?.can_manage_settlements,
-          view_all_partners: get("partners", "can_view") || !!partnerPermissions?.can_view_all_partners,
-          view_customers: get("customers", "can_view") || !!partnerPermissions?.can_view_customers,
-          view_brokerage: get("brokerage", "can_view") || !!partnerPermissions?.can_view_brokerage,
-          view_hawala: get("hawalas", "can_view") || !!partnerPermissions?.can_view_hawala,
-          view_custody: get("fund_transfers", "can_view") || !!partnerPermissions?.can_view_custody,
-          view_receivables: get("receivables", "can_view") || !!partnerPermissions?.can_view_customer_finance,
+          perms: {
+            view_all_cars: get("cars", "can_view"),
+            create_car: get("cars", "can_create"),
+            edit_car: get("cars", "can_edit"),
+            add_expense: get("cars", "can_create") || get("cars", "can_edit"),
+            add_payment: get("transactions", "can_create"),
+            view_transactions: get("transactions", "can_view"),
+            manage_settlements: get("transactions", "can_edit"),
+            view_all_partners: get("partners", "can_view"),
+            view_customers: get("customers", "can_view"),
+            view_brokerage: get("brokerage", "can_view"),
+            view_hawala: get("hawalas", "can_view"),
+            view_custody: get("fund_transfers", "can_view"),
+            view_receivables: get("receivables", "can_view"),
+          },
+          staffAccess,
         };
       }
 
-      const { data: partner } = await supabase.from("partners").select("id").eq("user_id", u.user.id).maybeSingle();
-      if (!partner) return NO_PERMS;
-      const { data, error } = await supabase.from("partner_permissions").select("*").eq("partner_id", partner.id).maybeSingle();
-      if (error) throw error;
-      if (!data) return NO_PERMS;
-      return {
-        view_all_cars: data.can_view_all_cars,
-        create_car: data.can_create_car,
-        edit_car: data.can_edit_car,
-        add_expense: data.can_add_expense,
-        add_payment: data.can_add_payment,
-        view_transactions: true,
-        manage_settlements: data.can_manage_settlements,
-        view_all_partners: data.can_view_all_partners,
-        view_customers: data.can_view_customers,
-        view_brokerage: data.can_view_brokerage,
-        view_hawala: data.can_view_hawala,
-        view_custody: data.can_view_custody,
-        view_receivables: data.can_view_customer_finance,
-      };
+      // Partner records are financial records only; they do not grant website access.
+      return { perms: NO_PERMS, staffAccess: emptyStaffAccess() };
     },
   });
+
   return {
     isAdmin,
-    perms: isAdmin ? ALL_PERMS : (q.data ?? NO_PERMS),
+    perms: isAdmin ? ALL_PERMS : (q.data?.perms ?? NO_PERMS),
+    can: (resource: StaffResource, action: StaffAction) =>
+      isAdmin || !!q.data?.staffAccess[resource]?.[action],
     isLoading: me.isLoading || (!!me.data && !isAdmin && q.isLoading),
   };
 }

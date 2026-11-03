@@ -40,11 +40,37 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         const { data: u } = await supabase.auth.getUser();
-        const [{ data: roles }, { data: staff }] = await Promise.all([
+        const [
+          { data: roles, error: rolesError },
+          { data: staff, error: staffError },
+          { data: permissions, error: permissionsError },
+        ] = await Promise.all([
           supabase.from("user_roles").select("role").eq("user_id", u.user!.id),
           (supabase as any).from("staff_access").select("is_active").eq("user_id", u.user!.id).maybeSingle(),
+          (supabase as any).from("staff_permissions")
+            .select("can_view,can_create,can_edit,can_delete")
+            .eq("user_id", u.user!.id),
         ]);
-        navigate({ to: roles?.some((r) => r.role === "admin") || staff?.is_active ? "/dashboard" : "/my" });
+
+        const isAdmin = !rolesError && !!roles?.some((r) => r.role === "admin");
+        const hasPermission =
+          !staffError &&
+          !permissionsError &&
+          staff?.is_active === true &&
+          !!permissions?.some((p: any) =>
+            p.can_view === true ||
+            p.can_create === true ||
+            p.can_edit === true ||
+            p.can_delete === true
+          );
+
+        if (!isAdmin && !hasPermission) {
+          await supabase.auth.signOut();
+          toast.error("این حساب مجوز ورود به سامانه را ندارد.");
+          return;
+        }
+
+        navigate({ to: "/dashboard" });
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin + "/reset-password",

@@ -1,5 +1,5 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "hirbod-khodro",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -101,5 +101,7 @@
   },
   "engines": {
     "node": ">=26.13.0 <27"
-  }
+  },
+  "version": "1.0.0",
+  "description": "Persian self-hosted vehicle trading, partner finance and accounting management system"
 }

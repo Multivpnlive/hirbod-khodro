@@ -40,7 +40,7 @@ function HawalasPage() {
     const [h, c, p, s, i, r] = await Promise.all([
       db.from("hawalas").select("id,mode,face_amount,cost_basis,status,customer_id,hawala_date,notes,is_demo").eq("is_demo", false).order("created_at", { ascending: false }),
       db.from("customers").select("id,name").eq("is_demo", false).order("name"),
-      db.from("partners").select("id,name").eq("is_demo", false).order("name"),
+      db.from("partners").select("id,name").eq("is_demo", false).eq("is_active", true).order("name"),
       db.from("hawala_sales").select("hawala_id,sale_amount,sale_date,buyer_customer_id"),
       db.from("hawala_investments").select("hawala_id,partner_id,amount").eq("is_demo", false),
       db.from("transactions").select("hawala_id,amount").eq("purpose", "hawala_sale").eq("type", "receipt").eq("is_demo", false),

@@ -37,7 +37,7 @@ function BrokeragePage() {
   async function load() {
     const [c, p, h, car, d, co, sp] = await Promise.all([
       db.from("customers").select("id,name").eq("is_demo", false).order("name"),
-      db.from("partners").select("id,name").eq("is_demo", false).order("name"),
+      db.from("partners").select("id,name").eq("is_demo", false).eq("is_active", true).order("name"),
       db.from("hawalas").select("id,mode,status,face_amount").eq("is_demo", false),
       db.from("cars").select("id,brand,model").eq("is_demo", false),
       db.from("brokerage_deals").select("id,customer_id,car_id,hawala_id,deal_value,commission,agreed_commission,deal_date,status,notes").eq("is_demo", false).order("deal_date", { ascending: false }),
