@@ -1293,21 +1293,12 @@ def restore_archive_v3(archive_path, job_id):
 
         progress("running", "restore-config", 40, "بازگردانی تنظیمات و کلیدهای سرور")
 
+        # Keep host-specific Caddy and systemd units from the destination.
+        # Restore application secrets and Telegram configuration only.
         config_items = (
             ("etc/hirbod/hirbod-runtime.env", "/etc/hirbod/hirbod-runtime.env"),
             ("etc/hirbod/hirbod-admin.env", "/etc/hirbod/hirbod-admin.env"),
             ("etc/hirbod/telegram-backup.json", "/etc/hirbod/telegram-backup.json"),
-            ("etc/caddy/Caddyfile", "/etc/caddy/Caddyfile"),
-            ("etc/systemd/system/hirbod-app.service",
-             "/etc/systemd/system/hirbod-app.service"),
-            ("etc/systemd/system/hirbod-app.service.d",
-             "/etc/systemd/system/hirbod-app.service.d"),
-            ("etc/systemd/system/hirbod-telegram-backup.service",
-             "/etc/systemd/system/hirbod-telegram-backup.service"),
-            ("etc/systemd/system/hirbod-telegram-backup-scheduled.service",
-             "/etc/systemd/system/hirbod-telegram-backup-scheduled.service"),
-            ("etc/systemd/system/hirbod-telegram-backup.timer",
-             "/etc/systemd/system/hirbod-telegram-backup.timer"),
         )
 
         for source, target in config_items:
