@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 REPO="https://github.com/Multivpnlive/hirbod-khodro.git"
-REF="${HIRBOD_RELEASE_REF:-release/installer-v1}"
+REF="${HIRBOD_RELEASE_REF:-v1.1.0}"
 
 die() {
   echo "[ERROR] $*" >&2

@@ -3,7 +3,7 @@ set -Eeuo pipefail
 umask 077
 
 REPOSITORY="https://github.com/Multivpnlive/hirbod-khodro.git"
-VERSION_TAG="v1.0.0"
+VERSION_TAG="v1.1.0"
 HEALTH_URL=""
 CONFIRM=0
 
@@ -30,7 +30,7 @@ while (($#)); do
       shift
       ;;
     --help|-h)
-      echo "Usage: update-from-github.sh --health-url https-domain [--version v1.0.0] [--dry-run|--yes]"
+      echo "Usage: update-from-github.sh --health-url https-domain [--version v1.1.0] [--dry-run|--yes]"
       exit 0
       ;;
     *)

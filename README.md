@@ -1,6 +1,6 @@
 # هیربد خودرو | Hirbod Khodro
 
-**نسخه انتشار: 1.0.0**
+**نسخه انتشار: 1.1.0**
 
 سامانه فارسی مدیریت خریدوفروش خودرو، حسابداری شرکا و مدیریت مالی کسب‌وکارهای خودرویی؛ قابل نصب روی VPS با Ubuntu و زیرساخت خودمیزبان.
 
@@ -20,8 +20,8 @@
 - اتصال اینترنت برای دریافت بسته‌ها و تصاویر Docker
 
 ## نصب
-برای نصب نسخه 1.0.0 روی سرور تازه، پس از انتشار تگ v1.0.0 اجرا کنید:
-bash <(curl -fsSL https://raw.githubusercontent.com/Multivpnlive/hirbod-khodro/v1.0.0/installer/install-from-github.sh) --domain YOUR_DOMAIN
+برای نصب نسخه 1.1.0 روی سرور تازه، پس از انتشار تگ v1.1.0 اجرا کنید:
+bash <(curl -fsSL https://raw.githubusercontent.com/Multivpnlive/hirbod-khodro/v1.1.0/installer/install-from-github.sh) --domain YOUR_DOMAIN
 برای بررسی به‌روزرسانی: bash installer/update-from-github.sh --health-url https://YOUR_DOMAIN --dry-run
 برای اعمال به‌روزرسانی: bash installer/update-from-github.sh --health-url https://YOUR_DOMAIN --yes
 پشتیبان‌گیری زمان‌بندی‌شده فعال است. فایل‌های پشتیبان با پسوند .hirbod برای نگهداری و بازیابی استفاده می‌شوند.

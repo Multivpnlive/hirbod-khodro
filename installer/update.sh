@@ -236,12 +236,17 @@ AVAILABLE_KB=$(df -Pk "$ROOT" | awk 'NR==2 {print $4}')
 [[ "$(stat -c %d "$ROOT")" == "$(stat -c %d /root)" ]] ||
   die "Application and backup directories must be on the same filesystem"
 
-RELEASE_ID=$(git -C "$SOURCE" rev-parse --short HEAD 2>/dev/null || echo package)
+RELEASE_VERSION=$(tr -d 'v\r\n' < "$SOURCE/VERSION")
+PACKAGE_VERSION=$("$NODE" -p "require('$SOURCE/package.json').version")
+[[ "$RELEASE_VERSION" == "$PACKAGE_VERSION" ]] ||
+  die "VERSION and package.json versions do not match"
+COMMIT_ID=$(git -C "$SOURCE" rev-parse --short HEAD 2>/dev/null || echo package)
 
 echo "======================================"
 echo " Hirbod Application Update"
 echo "======================================"
-echo "Release:       $RELEASE_ID"
+echo "Version:       $RELEASE_VERSION"
+echo "Commit:        $COMMIT_ID"
 echo "Node:          $ACTUAL_NODE"
 echo "Local health:  HTTP $LOCAL_BASELINE"
 echo "Public health: HTTP $PUBLIC_BASELINE"
@@ -400,7 +405,8 @@ SUCCESS=1
 echo
 echo "======================================"
 echo " HIRBOD UPDATE COMPLETED"
-echo " Release: $RELEASE_ID"
+echo " Version: $RELEASE_VERSION"
+echo " Commit:  $COMMIT_ID"
 echo " Node:    $("$NODE" --version)"
 echo " Backup:  $BACKUP/app"
 echo " Local:   HTTP $LOCAL_CODE"

@@ -3,7 +3,7 @@ set -Eeuo pipefail
 umask 077
 
 REPOSITORY="https://github.com/Multivpnlive/hirbod-khodro.git"
-VERSION_TAG="v1.0.0"
+VERSION_TAG="v1.1.0"
 DOMAIN=""
 
 die() { echo "[ERROR] $*" >&2; exit 1; }
@@ -21,7 +21,7 @@ while (($#)); do
       shift 2
       ;;
     --help|-h)
-      echo "Usage: install-from-github.sh --domain app.example.com [--version v1.0.0]"
+      echo "Usage: install-from-github.sh --domain app.example.com [--version v1.1.0]"
       exit 0
       ;;
     *)

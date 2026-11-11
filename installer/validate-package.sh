@@ -75,27 +75,23 @@ if [[ -d "$ROOT/drizzle/migrations" ]]; then
       -regex '.*/[0-9]{4}_.+\.sql' | sort
   )
 
-  if (( ${#MIGRATIONS[@]} == 15 )); then
-    ok "Found 15 numbered SQL migrations"
-  else
-    bad "Expected 15 numbered SQL migrations; found ${#MIGRATIONS[@]}"
-  fi
-
-  for n in $(seq 0 14); do
-    prefix="$(printf '%04d' "$n")"
-    found=0
+  if (( ${#MIGRATIONS[@]} > 0 )); then
+    ok "Found ${#MIGRATIONS[@]} numbered SQL migrations"
+    expected=0
     for file in "${MIGRATIONS[@]}"; do
-      if [[ "$(basename "$file")" == "$prefix"_*.sql ]]; then
-        found=1
+      prefix="$(printf '%04d' "$expected")"
+      if [[ "$(basename "$file")" != "$prefix"_*.sql ]]; then
+        bad "Migration sequence gap at $prefix"
         break
       fi
+      ((expected+=1))
     done
-    if (( found )); then
-      ok "Migration $prefix exists"
-    else
-      bad "Migration $prefix is missing"
+    if (( expected == ${#MIGRATIONS[@]} )); then
+      ok "Migration sequence is contiguous from 0000"
     fi
-  done
+  else
+    bad "No numbered SQL migrations found"
+  fi
 else
   bad "drizzle/migrations directory is missing"
 fi
