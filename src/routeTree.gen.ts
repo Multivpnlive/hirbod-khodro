@@ -16,11 +16,9 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated/backup'
 import { Route as AuthenticatedBrandingRouteImport } from './routes/_authenticated/branding'
-import { Route as AuthenticatedBrokerageRouteImport } from './routes/_authenticated/brokerage'
 import { Route as AuthenticatedCustomersRouteImport } from './routes/_authenticated/customers'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedFundTransfersRouteImport } from './routes/_authenticated/fund-transfers'
-import { Route as AuthenticatedHawalasRouteImport } from './routes/_authenticated/hawalas'
 import { Route as AuthenticatedMyRouteImport } from './routes/_authenticated/my'
 import { Route as AuthenticatedPartnersRouteImport } from './routes/_authenticated/partners'
 import { Route as AuthenticatedReceivablesRouteImport } from './routes/_authenticated/receivables'
@@ -65,11 +63,6 @@ const AuthenticatedBrandingRoute = AuthenticatedBrandingRouteImport.update({
   path: '/branding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedBrokerageRoute = AuthenticatedBrokerageRouteImport.update({
-  id: '/brokerage',
-  path: '/brokerage',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedCustomersRoute = AuthenticatedCustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
@@ -86,11 +79,6 @@ const AuthenticatedFundTransfersRoute =
     path: '/fund-transfers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedHawalasRoute = AuthenticatedHawalasRouteImport.update({
-  id: '/hawalas',
-  path: '/hawalas',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedMyRoute = AuthenticatedMyRouteImport.update({
   id: '/my',
   path: '/my',
@@ -146,11 +134,9 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/backup': typeof AuthenticatedBackupRoute
   '/branding': typeof AuthenticatedBrandingRoute
-  '/brokerage': typeof AuthenticatedBrokerageRoute
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/fund-transfers': typeof AuthenticatedFundTransfersRoute
-  '/hawalas': typeof AuthenticatedHawalasRoute
   '/my': typeof AuthenticatedMyRoute
   '/partners': typeof AuthenticatedPartnersRoute
   '/receivables': typeof AuthenticatedReceivablesRoute
@@ -168,11 +154,9 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/backup': typeof AuthenticatedBackupRoute
   '/branding': typeof AuthenticatedBrandingRoute
-  '/brokerage': typeof AuthenticatedBrokerageRoute
   '/customers': typeof AuthenticatedCustomersRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/fund-transfers': typeof AuthenticatedFundTransfersRoute
-  '/hawalas': typeof AuthenticatedHawalasRoute
   '/my': typeof AuthenticatedMyRoute
   '/partners': typeof AuthenticatedPartnersRoute
   '/receivables': typeof AuthenticatedReceivablesRoute
@@ -192,11 +176,9 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/backup': typeof AuthenticatedBackupRoute
   '/_authenticated/branding': typeof AuthenticatedBrandingRoute
-  '/_authenticated/brokerage': typeof AuthenticatedBrokerageRoute
   '/_authenticated/customers': typeof AuthenticatedCustomersRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/fund-transfers': typeof AuthenticatedFundTransfersRoute
-  '/_authenticated/hawalas': typeof AuthenticatedHawalasRoute
   '/_authenticated/my': typeof AuthenticatedMyRoute
   '/_authenticated/partners': typeof AuthenticatedPartnersRoute
   '/_authenticated/receivables': typeof AuthenticatedReceivablesRoute
@@ -216,11 +198,9 @@ export interface FileRouteTypes {
     | '/account'
     | '/backup'
     | '/branding'
-    | '/brokerage'
     | '/customers'
     | '/dashboard'
     | '/fund-transfers'
-    | '/hawalas'
     | '/my'
     | '/partners'
     | '/receivables'
@@ -238,11 +218,9 @@ export interface FileRouteTypes {
     | '/account'
     | '/backup'
     | '/branding'
-    | '/brokerage'
     | '/customers'
     | '/dashboard'
     | '/fund-transfers'
-    | '/hawalas'
     | '/my'
     | '/partners'
     | '/receivables'
@@ -261,11 +239,9 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/backup'
     | '/_authenticated/branding'
-    | '/_authenticated/brokerage'
     | '/_authenticated/customers'
     | '/_authenticated/dashboard'
     | '/_authenticated/fund-transfers'
-    | '/_authenticated/hawalas'
     | '/_authenticated/my'
     | '/_authenticated/partners'
     | '/_authenticated/receivables'
@@ -336,13 +312,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBrandingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/brokerage': {
-      id: '/_authenticated/brokerage'
-      path: '/brokerage'
-      fullPath: '/brokerage'
-      preLoaderRoute: typeof AuthenticatedBrokerageRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/customers': {
       id: '/_authenticated/customers'
       path: '/customers'
@@ -362,13 +331,6 @@ declare module '@tanstack/react-router' {
       path: '/fund-transfers'
       fullPath: '/fund-transfers'
       preLoaderRoute: typeof AuthenticatedFundTransfersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/hawalas': {
-      id: '/_authenticated/hawalas'
-      path: '/hawalas'
-      fullPath: '/hawalas'
-      preLoaderRoute: typeof AuthenticatedHawalasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/my': {
@@ -441,11 +403,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
   AuthenticatedBrandingRoute: typeof AuthenticatedBrandingRoute
-  AuthenticatedBrokerageRoute: typeof AuthenticatedBrokerageRoute
   AuthenticatedCustomersRoute: typeof AuthenticatedCustomersRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedFundTransfersRoute: typeof AuthenticatedFundTransfersRoute
-  AuthenticatedHawalasRoute: typeof AuthenticatedHawalasRoute
   AuthenticatedMyRoute: typeof AuthenticatedMyRoute
   AuthenticatedPartnersRoute: typeof AuthenticatedPartnersRoute
   AuthenticatedReceivablesRoute: typeof AuthenticatedReceivablesRoute
@@ -460,11 +420,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedBackupRoute: AuthenticatedBackupRoute,
   AuthenticatedBrandingRoute: AuthenticatedBrandingRoute,
-  AuthenticatedBrokerageRoute: AuthenticatedBrokerageRoute,
   AuthenticatedCustomersRoute: AuthenticatedCustomersRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedFundTransfersRoute: AuthenticatedFundTransfersRoute,
-  AuthenticatedHawalasRoute: AuthenticatedHawalasRoute,
   AuthenticatedMyRoute: AuthenticatedMyRoute,
   AuthenticatedPartnersRoute: AuthenticatedPartnersRoute,
   AuthenticatedReceivablesRoute: AuthenticatedReceivablesRoute,

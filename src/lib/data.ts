@@ -42,8 +42,6 @@ export type PermKey =
   | "manage_settlements"
   | "view_all_partners"
   | "view_customers"
-  | "view_brokerage"
-  | "view_hawala"
   | "view_custody"
   | "view_receivables";
 export type Perms = Record<PermKey, boolean>;
@@ -58,8 +56,6 @@ export const PERM_LABELS: { key: PermKey; label: string }[] = [
   { key: "manage_settlements", label: "مدیریت تسویه‌حساب‌ها" },
   { key: "view_all_partners", label: "مشاهده شرکا" },
   { key: "view_customers", label: "مشاهده مشتریان" },
-  { key: "view_brokerage", label: "مشاهده کارگزاری" },
-  { key: "view_hawala", label: "مشاهده حواله‌ها" },
   { key: "view_custody", label: "مشاهده انتقال وجه" },
   { key: "view_receivables", label: "مشاهده مطالبات فروش" },
 ];
@@ -74,8 +70,6 @@ const NO_PERMS: Perms = {
   manage_settlements: false,
   view_all_partners: false,
   view_customers: false,
-  view_brokerage: false,
-  view_hawala: false,
   view_custody: false,
   view_receivables: false,
 };
@@ -86,14 +80,14 @@ const ALL_PERMS: Perms = Object.fromEntries(
 
 export type StaffResource =
   | "cars" | "partners" | "transactions" | "customers"
-  | "receivables" | "fund_transfers" | "brokerage" | "hawalas";
+  | "receivables" | "fund_transfers";
 
 export type StaffAction = "view" | "create" | "edit" | "delete";
 type StaffAccessMap = Record<StaffResource, Record<StaffAction, boolean>>;
 
 const STAFF_RESOURCES: StaffResource[] = [
   "cars", "partners", "transactions", "customers",
-  "receivables", "fund_transfers", "brokerage", "hawalas",
+  "receivables", "fund_transfers",
 ];
 
 function emptyStaffAccess(): StaffAccessMap {
@@ -161,8 +155,6 @@ export function usePerms() {
             manage_settlements: get("transactions", "can_edit"),
             view_all_partners: get("partners", "can_view"),
             view_customers: get("customers", "can_view"),
-            view_brokerage: get("brokerage", "can_view"),
-            view_hawala: get("hawalas", "can_view"),
             view_custody: get("fund_transfers", "can_view"),
             view_receivables: get("receivables", "can_view"),
           },

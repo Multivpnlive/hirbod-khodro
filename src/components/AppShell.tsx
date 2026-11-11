@@ -1,7 +1,7 @@
 import { Link, Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { LayoutDashboard, Car, Database, Users, Wallet, FileBarChart, LogOut, MoreHorizontal, UserRound, ArrowLeftRight, ReceiptText, HandCoins, X, Settings, Palette } from "lucide-react";
+import { LayoutDashboard, Car, Database, Users, Wallet, FileBarChart, LogOut, MoreHorizontal, UserRound, ArrowLeftRight, HandCoins, X, Settings, Palette } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe, usePerms, type PermKey } from "@/lib/data";
@@ -21,10 +21,8 @@ const accountNav = [
 ] as const;
 const featureNav = [
   { to: "/customers", label: "مشتریان", icon: UserRound },
-  { to: "/hawalas", label: "حواله‌ها", icon: ReceiptText },
   { to: "/receivables", label: "مطالبات فروش", icon: HandCoins },
   { to: "/fund-transfers", label: "انتقال وجه", icon: ArrowLeftRight },
-  { to: "/brokerage", label: "کارگزاری", icon: Wallet },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -37,10 +35,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const staffFeatureNav = featureNav.filter((item) => {
     if (item.to === "/customers") return perms.view_customers;
-    if (item.to === "/hawalas") return perms.view_hawala;
     if (item.to === "/receivables") return perms.view_receivables;
     if (item.to === "/fund-transfers") return perms.view_custody;
-    if (item.to === "/brokerage") return perms.view_brokerage;
     return false;
   });
   const hasAnyAccess = Object.values(perms).some(Boolean);

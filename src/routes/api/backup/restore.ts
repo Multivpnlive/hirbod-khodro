@@ -116,7 +116,7 @@ async function authorizeAdmin(request: Request) {
     throw new HttpError(401, "نشست معتبر نیست؛ دوباره وارد شوید.");
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseUrl = process.env.SUPABASE_INTERNAL_URL || process.env.SUPABASE_URL;
   const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
 
   if (!supabaseUrl || !publishableKey) {

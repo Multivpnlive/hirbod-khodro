@@ -124,10 +124,37 @@ function AddTxn() {
     const f = new FormData(form);
     const txnType = String(f.get("type"));
     const chosenFund = isAdmin ? String(f.get("fund") || "business") : "business";
-    const customerId = String(f.get("customer") || "") || null;
-    if (chosenFund === "custody" && !customerId) { toast.error("برای تراکنش امانی، انتخاب مشتری الزامی است"); return; }
+    let customerId = String(f.get("customer") || "") || null;
+    const newCustomerName = String(f.get("new_customer_name") || "").trim();
+    if (chosenFund === "custody" && !customerId && !newCustomerName) {
+      toast.error("برای تراکنش امانی، مشتری را انتخاب یا مشخصات مشتری جدید را وارد کنید");
+      return;
+    }
     if (txnType === "settlement" && chosenFund !== "business") { toast.error("تسویه شرکا فقط از صندوق کسب‌وکار مجاز است"); return; }
     setBusy(true);
+
+    if (chosenFund === "custody" && !customerId && newCustomerName) {
+      const nationalId = String(f.get("new_customer_national_id") || "").trim() || null;
+      if (nationalId) {
+        const { data, error } = await db.from("customers").select("id")
+          .eq("national_id", nationalId).eq("is_demo", false).limit(1).maybeSingle();
+        if (error) { toast.error(error.message); setBusy(false); return; }
+        customerId = data?.id ?? null;
+      }
+      if (!customerId) {
+        const { data, error } = await db.from("customers").insert({
+          name: newCustomerName,
+          phone: String(f.get("new_customer_phone") || "").trim() || null,
+          national_id: nationalId,
+          notes: null,
+          is_demo: false,
+        }).select("id,name").single();
+        if (error) { toast.error(error.message); setBusy(false); return; }
+        customerId = data.id;
+        setCustomers((current) => [...current, data as CustomerOption]);
+      }
+    }
+
     const { error } = await db.from("transactions").insert({
       type: txnType,
       amount: num(f.get("amount")),
@@ -170,6 +197,16 @@ function AddTxn() {
           {isAdmin && fund === "custody" && <div className="col-span-2"><Field label="مشتری صاحب وجه">
             <NativeSelect name="customer"><option value="">انتخاب مشتری</option>{customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</NativeSelect>
           </Field></div>}
+          {isAdmin && fund === "custody" && <div className="col-span-2 rounded-lg border p-3">
+            <details>
+              <summary className="cursor-pointer text-sm">افزودن مشتری جدید</summary>
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                <Field label="نام مشتری"><Input name="new_customer_name" /></Field>
+                <Field label="تلفن"><Input name="new_customer_phone" inputMode="tel" /></Field>
+                <Field label="کد ملی"><Input name="new_customer_national_id" inputMode="numeric" /></Field>
+              </div>
+            </details>
+          </div>}
           <Field label="شریک (اختیاری)">
             <NativeSelect name="partner"><option value="">—</option>{d.partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</NativeSelect>
           </Field>

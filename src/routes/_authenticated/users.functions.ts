@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const RESOURCES = [
@@ -8,8 +9,6 @@ const RESOURCES = [
   "customers",
   "receivables",
   "fund_transfers",
-  "brokerage",
-  "hawalas",
 ] as const;
 
 const ROLES = ["finance_manager", "sales", "limited"] as const;
@@ -82,6 +81,38 @@ function validatePermissions(value: unknown): PermissionRow[] {
   return rows;
 }
 
+
+function currentAppOrigin(): string {
+  const request = getRequest();
+  const host = (request.headers.get("host") || "").split(",")[0].trim();
+  const proto = (
+    request.headers.get("x-forwarded-proto") ||
+    new URL(request.url).protocol.replace(":", "")
+  ).split(",")[0].trim().toLowerCase();
+
+  if (!host || proto !== "https") {
+    throw new Error("آدرس امن برنامه از درخواست قابل تشخیص نیست.");
+  }
+
+  let base: URL;
+  try {
+    base = new URL(`${proto}://${host}`);
+  } catch {
+    throw new Error("آدرس برنامه معتبر نیست.");
+  }
+
+  if (base.host.toLowerCase() !== host.toLowerCase()) {
+    throw new Error("مبدأ درخواست معتبر نیست.");
+  }
+
+  const origin = request.headers.get("origin");
+  if (origin && new URL(origin).origin !== base.origin) {
+    throw new Error("مبدأ درخواست با میزبان برنامه مطابقت ندارد.");
+  }
+
+  return base.origin;
+}
+
 export const listStaffUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -150,13 +181,7 @@ export const inviteStaffUser = createServerFn({ method: "POST" })
   })
   .handler(async ({ context, data }) => {
     const { auth, admin } = await requireAdmin(context);
-    const configuredBase = process.env.SUPABASE_URL;
-    if (!configuredBase) throw new Error("آدرس امن سامانه تنظیم نشده است.");
-    const baseUrl = new URL(configuredBase);
-    if (baseUrl.protocol !== "https:" || baseUrl.hostname !== "hirbod.multiroxynet.ir") {
-      throw new Error("برای ساخت لینک دعوت، آدرس HTTPS سامانه باید تنظیم باشد.");
-    }
-    const redirectTo = new URL("/reset-password", baseUrl).toString();
+    const redirectTo = new URL("/reset-password", currentAppOrigin()).toString();
 
     // generateLink creates the invited Auth user and returns a one-time action link;
     // unlike inviteUserByEmail, it does not attempt to send email through SMTP.
@@ -281,13 +306,7 @@ export const createStaffRenewalLink = createServerFn({ method: "POST" })
       throw new Error("دریافت اطلاعات حساب کاربر ناموفق بود.");
     }
 
-    const configuredBase = process.env.SUPABASE_URL;
-    if (!configuredBase) throw new Error("آدرس امن سامانه تنظیم نشده است.");
-
-    const baseUrl = new URL(configuredBase);
-    if (baseUrl.protocol !== "https:" || baseUrl.hostname !== "hirbod.multiroxynet.ir") {
-      throw new Error("آدرس HTTPS سامانه معتبر نیست.");
-    }
+    const redirectTo = new URL("/reset-password", currentAppOrigin()).toString();
 
     // Recovery verification also confirms an invited user whose email is
     // not yet confirmed, so this works for both pending and active accounts.
@@ -296,7 +315,7 @@ export const createStaffRenewalLink = createServerFn({ method: "POST" })
         type: "recovery",
         email: target.email,
         options: {
-          redirectTo: new URL("/reset-password", baseUrl).toString(),
+          redirectTo,
         },
       });
 

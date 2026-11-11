@@ -14,7 +14,7 @@ export const today = todayIso;
 
 /** «سرمایه شرکا و هزینه‌ها» section used inside the new-car form. */
 export function FundingEditor({
-  partners, invs, setInvs, exps, setExps, purchase,
+  partners, invs, setInvs, exps, setExps, purchase, allowInvestments = true,
 }: {
   partners: Partner[];
   invs: InvRow[];
@@ -22,6 +22,7 @@ export function FundingEditor({
   exps: ExpRow[];
   setExps: (r: ExpRow[]) => void;
   purchase: number;
+  allowInvestments?: boolean;
 }) {
   const capital = invs.reduce((s, r) => s + num(r.amount), 0);
   const expTotal = exps.reduce((s, r) => s + num(r.amount), 0);
@@ -30,6 +31,7 @@ export function FundingEditor({
     <div className="col-span-2 space-y-3 rounded-lg border p-3">
       <div className="font-bold text-sm">سرمایه شرکا و هزینه‌ها</div>
 
+      {allowInvestments && (
       <div className="space-y-2">
         <div className="text-xs text-muted-foreground">سرمایه شرکا (تومان)</div>
         {invs.map((r, i) => (
@@ -46,6 +48,7 @@ export function FundingEditor({
         ))}
         <Button type="button" variant="outline" size="sm" onClick={() => setInvs([...invs, { partner_id: "", amount: "" }])}><Plus className="size-4" /> افزودن شریک</Button>
       </div>
+      )}
 
       <div className="space-y-2">
         <div className="text-xs text-muted-foreground">هزینه‌های جانبی</div>

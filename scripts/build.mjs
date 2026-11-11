@@ -42,35 +42,17 @@ function readEnvironmentFile(path) {
 
 const runtime = readEnvironmentFile("/etc/hirbod/hirbod-runtime.env");
 
-const supabaseUrl =
-  process.env.VITE_SUPABASE_URL ||
-  process.env.SUPABASE_URL ||
-  runtime.VITE_SUPABASE_URL ||
-  runtime.SUPABASE_URL;
-
 const publishableKey =
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   process.env.SUPABASE_PUBLISHABLE_KEY ||
   runtime.VITE_SUPABASE_PUBLISHABLE_KEY ||
   runtime.SUPABASE_PUBLISHABLE_KEY;
 
-if (!supabaseUrl || !publishableKey) {
-  console.error("Build متوقف شد: تنظیمات عمومی Supabase پیدا نشد.");
+if (!publishableKey) {
+  console.error("Build متوقف شد: کلید عمومی Supabase پیدا نشد.");
   process.exit(1);
 }
 
-try {
-  const parsedUrl = new URL(supabaseUrl);
-
-  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-    throw new Error("Invalid protocol");
-  }
-} catch {
-  console.error("Build متوقف شد: آدرس Supabase معتبر نیست.");
-  process.exit(1);
-}
-
-process.env.VITE_SUPABASE_URL = supabaseUrl;
 process.env.VITE_SUPABASE_PUBLISHABLE_KEY = publishableKey;
 
 let mode;

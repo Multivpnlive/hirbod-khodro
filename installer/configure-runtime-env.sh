@@ -37,17 +37,14 @@ if values.get("API_GW_HTTP_PORT") != "127.0.0.1:8000":
 if values.get("DISABLE_SIGNUP", "").lower() != "true":
     raise SystemExit("[ERROR] Public signup is not disabled")
 
-if values.get("SUPABASE_PUBLIC_URL") != f"https://{domain}":
-    raise SystemExit("[ERROR] Supabase domain mismatch")
-
 Path(directory).mkdir(mode=0o700, parents=True, exist_ok=True)
 os.chmod(directory, 0o700)
 
 files = {
     "hirbod-runtime.env": {
-        "SUPABASE_URL": f"https://{domain}",
+        "SUPABASE_INTERNAL_URL": "http://127.0.0.1:8000",
+        "SUPABASE_URL": "http://127.0.0.1:8000",
         "SUPABASE_PUBLISHABLE_KEY": values["SUPABASE_PUBLISHABLE_KEY"],
-        "VITE_SUPABASE_URL": f"https://{domain}",
         "VITE_SUPABASE_PUBLISHABLE_KEY": values["SUPABASE_PUBLISHABLE_KEY"],
     },
     "hirbod-admin.env": {

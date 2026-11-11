@@ -5,13 +5,14 @@ import { MailPlus, RefreshCw, Save, ShieldCheck, Users, UserRound, Link2, Copy, 
 import { toast } from "sonner";
 import { PageHeader } from "@/components/AppShell";
 import { useMe } from "@/lib/data";
+import type { StaffResource } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { inviteStaffUser, listStaffUsers, saveStaffUser, createStaffRenewalLink, updateStaffIdentity, deleteStaffUser } from "./users.functions";
 
 type StaffRole = "finance_manager" | "sales" | "limited";
-type Resource = "cars" | "partners" | "transactions" | "customers" | "receivables" | "fund_transfers" | "brokerage" | "hawalas";
+type Resource = StaffResource;
 type PermissionRow = { resource: Resource; can_view: boolean; can_create: boolean; can_edit: boolean; can_delete: boolean };
 type StaffUser = {
   userId: string; email: string; fullName: string; createdAt: string;
@@ -32,8 +33,6 @@ const RESOURCES: { key: Resource; label: string }[] = [
   { key: "customers", label: "مشتریان" },
   { key: "receivables", label: "مطالبات فروش" },
   { key: "fund_transfers", label: "انتقال وجه" },
-  { key: "brokerage", label: "کارگزاری" },
-  { key: "hawalas", label: "حواله‌ها" },
 ];
 const ACTIONS = [
   { key: "can_view", label: "مشاهده" },
