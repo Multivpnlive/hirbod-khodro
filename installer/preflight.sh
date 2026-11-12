@@ -71,19 +71,19 @@ else
 fi
 
 MEM_KB="$(awk '/MemTotal:/ {print $2}' /proc/meminfo)"
-MEM_GB=$(( MEM_KB / 1024 / 1024 ))
-if (( MEM_GB >= 4 )); then
-  ok "RAM: approximately ${MEM_GB} GiB"
+MEM_GIB="$(awk -v kb="$MEM_KB" 'BEGIN {printf "%.1f", kb / 1024 / 1024}')"
+if (( MEM_KB >= 3 * 1024 * 1024 )); then
+  ok "RAM: approximately ${MEM_GIB} GiB"
 else
-  fail "At least 4 GiB RAM required; found approximately ${MEM_GB} GiB"
+  warn "RAM is below 3 GiB: approximately ${MEM_GIB} GiB"
 fi
 
 DISK_KB="$(df -Pk / | awk 'NR==2 {print $4}')"
-DISK_GB=$(( DISK_KB / 1024 / 1024 ))
-if (( DISK_GB >= 25 )); then
-  ok "Available root filesystem space: approximately ${DISK_GB} GiB"
+DISK_GIB="$(awk -v kb="$DISK_KB" 'BEGIN {printf "%.1f", kb / 1024 / 1024}')"
+if (( DISK_KB >= 15 * 1024 * 1024 )); then
+  ok "Available root filesystem space: approximately ${DISK_GIB} GiB"
 else
-  fail "At least 25 GiB free on / required; found approximately ${DISK_GB} GiB"
+  warn "Available root filesystem space is below 15 GiB: approximately ${DISK_GIB} GiB"
 fi
 
 if [[ -n "$DOMAIN" ]]; then
