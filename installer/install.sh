@@ -61,10 +61,10 @@ bash "$RELEASE/installer/install-node.sh"
 step "Installing Supabase"
 bash "$RELEASE/installer/install-supabase.sh"
 
-step "Configuring customer domain"
+step "Configuring domain and runtime environment"
 bash "$RELEASE/installer/configure-domain.sh" "$DOMAIN"
 bash "$RELEASE/installer/secure-supabase-env.sh"
-bash "$RELEASE/installer/configure-runtime-env.sh" "$DOMAIN"
+bash "$RELEASE/installer/configure-runtime-env.sh"
 
 step "Starting Supabase"
 bash "$RELEASE/installer/start-supabase.sh"

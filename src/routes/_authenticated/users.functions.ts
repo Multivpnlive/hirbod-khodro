@@ -217,7 +217,7 @@ export const inviteStaffUser = createServerFn({ method: "POST" })
     }
     // The action link is a bearer secret. Return it only to the authenticated admin;
     // never persist it or write it to logs.
-    const inviteLink = `${baseUrl.origin}/reset-password#token_hash=${encodeURIComponent(tokenHash)}&type=invite`;
+    const inviteLink = `${redirectTo}#token_hash=${encodeURIComponent(tokenHash)}&type=invite`;
     return { success: true, userId, email: data.email, inviteLink };
   });
 
@@ -327,7 +327,7 @@ export const createStaffRenewalLink = createServerFn({ method: "POST" })
     }
 
     const inviteLink =
-      `${baseUrl.origin}/reset-password#token_hash=${encodeURIComponent(tokenHash)}&type=recovery`;
+      `${redirectTo}#token_hash=${encodeURIComponent(tokenHash)}&type=recovery`;
 
     return {
       success: true,
