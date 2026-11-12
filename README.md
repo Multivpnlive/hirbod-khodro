@@ -27,37 +27,30 @@
 
 ## نصب روی سرور جدید
 
-> این روش برای نصب تازه است؛ برای سروری که قبلاً هیربد خودرو روی آن نصب شده، از بخش «به‌روزرسانی» استفاده کنید.
-
-ابتدا دامنه را به IP سرور متصل کنید. سپس دستور زیر را با جایگزین‌کردن `YOUR_DOMAIN` با دامنه واقعی اجرا کنید:
+ابتدا دامنه را به IP سرور متصل کنید. سپس فقط این دستور را روی سرور اجرا کنید:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/Multivpnlive/hirbod-khodro/v1.1.0/installer/install-from-github.sh) --domain YOUR_DOMAIN
+bash <(curl -fsSL https://raw.githubusercontent.com/Multivpnlive/hirbod-khodro/main/installer/install-from-github.sh)
 ```
 
-نصب‌کننده پیش‌نیازها را بررسی و سرویس‌های موردنیاز را راه‌اندازی می‌کند.
+نصب‌کننده آخرین نسخه را دریافت می‌کند، دامنه را می‌پرسد و نصب را کامل انجام می‌دهد. نیازی به ورود به پوشه پروژه نیست.
 
-## به‌روزرسانی نسخه موجود
+## به‌روزرسانی
 
-برای به‌روزرسانی، ابتدا وارد پوشه مخزن برنامه روی سرور شوید؛ همان پوشه‌ای که دایرکتوری `installer` در آن قرار دارد.
-
-### ۱. پیش‌بررسی به‌روزرسانی (بدون اعمال تغییرات)
-
-این مرحله وضعیت نسخه، سلامت سرویس و شرایط لازم برای به‌روزرسانی را بررسی می‌کند؛ اما به‌روزرسانی را اعمال نمی‌کند.
+فقط این دستور را اجرا کنید:
 
 ```bash
-bash installer/update-from-github.sh --health-url https://YOUR_DOMAIN --dry-run
+bash <(curl -fsSL https://raw.githubusercontent.com/Multivpnlive/hirbod-khodro/main/installer/update-from-github.sh)
 ```
 
-### ۲. اعمال به‌روزرسانی
+دامنه از تنظیمات Caddy تشخیص داده می‌شود. حالت پیش‌فرض پیش‌بررسی بدون تغییر است. برای بروزرسانی واقعی، گزینه ۲ را انتخاب و عبارت UPDATE را وارد کنید.
 
-پس از بررسی نتیجه مرحله قبل و اطمینان از داشتن نسخه پشتیبان معتبر، برای اعمال به‌روزرسانی اجرا کنید:
+### اجرای دستوری اختیاری
 
 ```bash
-bash installer/update-from-github.sh --health-url https://YOUR_DOMAIN --yes
+bash installer/update-from-github.sh --domain app.example.com --dry-run
+bash installer/update-from-github.sh --domain app.example.com --yes
 ```
-
-> گزینه `--yes` به‌روزرسانی واقعی را اجرا می‌کند. بدون بررسی نتیجه پیش‌بررسی و تهیه پشتیبان، آن را اجرا نکنید.
 
 ## پشتیبان‌گیری و بازیابی
 

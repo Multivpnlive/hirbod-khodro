@@ -1,36 +1,57 @@
 # Hirbod Khodro Installer
 
-This directory contains the customer-facing installation tooling.
+## نصب با یک دستور
 
-## Current implementation stage
+روی سرور Ubuntu با دسترسی root اجرا کنید:
 
-`preflight.sh` performs read-only checks before installation:
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Multivpnlive/hirbod-khodro/main/installer/install-from-github.sh)
+```
 
-- Ubuntu 22.04 or 24.04 and x86_64 architecture
-- CPU, memory, and available disk capacity
-- Domain DNS pointing to the target server's public IPv4
-- Availability of application and Supabase ports
-- Protection against overwriting an existing `/opt/hirbod` installation
-- Existing Docker and firewall state
+اسکریپت آخرین نسخه منتشرشده را دریافت می‌کند، دامنه را می‌پرسد و نصب را انجام می‌دهد. نیازی به ورود به پوشه پروژه یا دریافت دستی مخزن نیست.
 
-Run:
+## بروزرسانی با یک دستور
 
-    sudo bash installer/preflight.sh --domain app.example.com
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Multivpnlive/hirbod-khodro/main/installer/update-from-github.sh)
+```
 
-The preflight script does not install packages, change firewall rules,
-modify DNS, create files outside this installer directory, or start services.
+دامنه از تنظیمات Caddy تشخیص داده می‌شود؛ در صورت عدم تشخیص، از کاربر پرسیده می‌شود.
 
-## Installer design requirements
+حالت پیش‌فرض، پیش‌بررسی بدون اعمال تغییرات است. برای بروزرسانی واقعی، گزینه ۲ را انتخاب و عبارت UPDATE را وارد کنید.
 
-- Pin the self-hosted Supabase source to `self-hosted/v0.8.3`.
-- Generate unique secrets on the customer's server.
-- Never copy production `.env` files or production database contents.
-- Never print generated secrets or use `run.sh secrets`.
-- Keep Supabase's API gateway bound to localhost.
-- Apply application migrations in order and provision the first admin
-  before migrations that require an existing admin.
-- Disable public signup after the initial administrator is created.
-- Keep restore authorization and admin-role checks intact.
-- Run the application with least privilege; privileged restore operations
-  must use a narrowly scoped helper.
-- Configure HTTPS and validate the installation with health checks.
+## دستورات اختیاری
+
+```bash
+# پیش‌بررسی
+bash installer/update-from-github.sh --domain app.example.com --dry-run
+
+# بروزرسانی واقعی؛ پس از بررسی و تهیه پشتیبان
+bash installer/update-from-github.sh --domain app.example.com --yes
+
+# پیش‌بررسی نصب تازه
+bash installer/preflight.sh --domain app.example.com
+```
+
+## بررسی‌های نصب
+
+- Ubuntu 22.04 یا 24.04 و معماری x86_64
+- منابع CPU، حافظه و فضای دیسک
+- DNS دامنه و دسترسی شبکه
+- پورت‌های موردنیاز برنامه و Supabase
+- جلوگیری از بازنویسی نصب موجود
+
+## الزامات امنیتی و نگهداری
+
+- تنظیمات و داده‌های Supabase موجود باید حفظ شوند.
+- فایل‌های محرمانه و `.env` واقعی نباید وارد Git شوند.
+- کلیدها و گذرواژه‌ها فقط روی سرور نگهداری شوند.
+- مهاجرت‌های پایگاه داده نباید بدون دستورالعمل همان نسخه اجرا شوند.
+- پیش از هر بروزرسانی واقعی، نسخه پشتیبان معتبر تهیه شود.
+- کنترل دسترسی مدیر و مجوزهای بازیابی حفظ شوند.
+- سرویس با حداقل سطح دسترسی لازم اجرا شود.
+- HTTPS و سلامت سرویس پس از نصب بررسی شوند.
+
+## مهاجرت پایگاه داده
+
+اسکریپت بروزرسانی، مهاجرت‌های پایگاه داده را خودکار اجرا نمی‌کند. مهاجرت‌ها فقط طبق دستورالعمل نسخه مقصد و پس از تهیه پشتیبان انجام شوند. از اجرای تکراری مهاجرت‌ها خودداری کنید.
