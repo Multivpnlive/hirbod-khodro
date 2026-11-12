@@ -93,6 +93,11 @@ export type Database = {
       };
       cars: {
         Row: {
+          asset_type: "hawala" | "car";
+          ownership_type: "personal" | "shared";
+          factory_price: number;
+          premium_price: number;
+          delivery_date: string | null;
           brand: string;
           color: string | null;
           created_at: string;
@@ -109,6 +114,11 @@ export type Database = {
           year: number | null;
         };
         Insert: {
+          asset_type?: "hawala" | "car";
+          ownership_type?: "personal" | "shared";
+          factory_price?: number;
+          premium_price?: number;
+          delivery_date?: string | null;
           brand: string;
           color?: string | null;
           created_at?: string;
@@ -125,6 +135,11 @@ export type Database = {
           year?: number | null;
         };
         Update: {
+          asset_type?: "hawala" | "car";
+          ownership_type?: "personal" | "shared";
+          factory_price?: number;
+          premium_price?: number;
+          delivery_date?: string | null;
           brand?: string;
           color?: string | null;
           created_at?: string;

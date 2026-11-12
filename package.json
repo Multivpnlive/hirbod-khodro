@@ -1,12 +1,12 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "hirbod-khodro",
   "private": true,
   "sideEffects": false,
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
+    "build": "node scripts/build.mjs",
+    "build:dev": "node scripts/build.mjs --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -98,5 +98,10 @@
     "typescript-eslint": "^8.56.1",
     "vite": "8.1.5",
     "vitest": "^4.1.10"
-  }
+  },
+  "engines": {
+    "node": ">=26.13.0 <27"
+  },
+  "version": "1.1.0",
+  "description": "Persian self-hosted vehicle trading, partner finance and accounting management system"
 }

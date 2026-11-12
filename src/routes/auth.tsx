@@ -1,18 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useBranding } from "@/lib/branding";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "ورود | هیربد خودرو" },
-      { name: "description", content: "ورود و ثبت‌نام در هیربد خودرو با ایمیل و رمز عبور." },
+      { name: "description", content: "ورود کاربران مجاز به سامانه مدیریت هیربد خودرو." },
       { property: "og:title", content: "ورود به هیربد خودرو" },
-      { property: "og:description", content: "ورود مدیر و شرکا به سامانه هیربد خودرو." },
+      { property: "og:description", content: "ورود کاربران مجاز به سامانه مدیریت هیربد خودرو." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -21,12 +22,15 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const [mode, setMode] = useState<"in" | "up" | "forgot">("in");
+  const [mode, setMode] = useState<"in" | "forgot">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  const { branding } = useBranding();
+  useEffect(() => {
+    document.title = `ورود | ${branding.app_name}`;
+  }, [branding.app_name]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,17 +40,37 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         const { data: u } = await supabase.auth.getUser();
-        const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", u.user!.id);
-        navigate({ to: roles?.some((r) => r.role === "admin") ? "/dashboard" : "/my" });
-      } else if (mode === "up") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin + "/auth", data: { full_name: name } },
-        });
-        if (error) throw error;
-        toast.success("لینک تأیید به ایمیل شما ارسال شد. پس از تأیید وارد شوید.");
-        setMode("in");
+        const [
+          { data: roles, error: rolesError },
+          { data: staff, error: staffError },
+          { data: permissions, error: permissionsError },
+        ] = await Promise.all([
+          supabase.from("user_roles").select("role").eq("user_id", u.user!.id),
+          (supabase as any).from("staff_access").select("is_active").eq("user_id", u.user!.id).maybeSingle(),
+          (supabase as any).from("staff_permissions")
+            .select("can_view,can_create,can_edit,can_delete")
+            .eq("user_id", u.user!.id),
+        ]);
+
+        const isAdmin = !rolesError && !!roles?.some((r) => r.role === "admin");
+        const hasPermission =
+          !staffError &&
+          !permissionsError &&
+          staff?.is_active === true &&
+          !!permissions?.some((p: any) =>
+            p.can_view === true ||
+            p.can_create === true ||
+            p.can_edit === true ||
+            p.can_delete === true
+          );
+
+        if (!isAdmin && !hasPermission) {
+          await supabase.auth.signOut();
+          toast.error("این حساب مجوز ورود به سامانه را ندارد.");
+          return;
+        }
+
+        navigate({ to: "/dashboard" });
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin + "/reset-password",
@@ -65,17 +89,17 @@ function AuthPage() {
     <div className="min-h-screen grid place-items-center bg-hero p-4">
       <form onSubmit={submit} className="card-elevated w-full max-w-sm p-6 space-y-4">
         <div>
-          <div className="text-2xl font-black">هیربد خودرو</div>
+          <div className="flex items-center gap-3">
+            {branding.logo_url && <img src={branding.logo_url} alt={branding.company_name} className="size-12 rounded-lg border bg-white object-contain p-1" />}
+            <div>
+              <div className="text-2xl font-black">{branding.app_name}</div>
+              <div className="text-xs text-muted-foreground mt-1">{branding.company_name}</div>
+            </div>
+          </div>
           <div className="text-sm text-muted-foreground mt-1">
-            {mode === "in" ? "ورود به حساب" : mode === "up" ? "ساخت حساب جدید" : "بازیابی رمز عبور"}
+            {mode === "in" ? "ورود به حساب" : "بازیابی رمز عبور"}
           </div>
         </div>
-        {mode === "up" && (
-          <div className="space-y-2">
-            <Label>نام و نام خانوادگی</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} required />
-          </div>
-        )}
         <div className="space-y-2">
           <Label>ایمیل</Label>
           <Input type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -87,20 +111,21 @@ function AuthPage() {
           </div>
         )}
         <Button className="w-full" disabled={busy}>
-          {mode === "in" ? "ورود" : mode === "up" ? "ثبت‌نام" : "ارسال لینک"}
+          {mode === "in" ? "ورود" : "ارسال لینک"}
         </Button>
-        <div className="flex justify-between text-sm">
-          <button type="button" className="text-primary" onClick={() => setMode(mode === "in" ? "up" : "in")}>
-            {mode === "in" ? "حساب ندارید؟ ثبت‌نام" : "ورود"}
-          </button>
-          {mode === "in" && (
+        <div className="flex justify-end text-sm">
+          {mode === "in" ? (
             <button type="button" className="text-muted-foreground" onClick={() => setMode("forgot")}>
               فراموشی رمز
+            </button>
+          ) : (
+            <button type="button" className="text-primary" onClick={() => setMode("in")}>
+              بازگشت به ورود
             </button>
           )}
         </div>
         <p className="text-xs text-muted-foreground leading-6">
-          شرکا با همان ایمیلی که مدیر برایشان ثبت کرده ثبت‌نام کنند تا حسابشان خودکار متصل شود.
+          ایجاد حساب کاربری فقط با تأیید مدیر مجموعه انجام می‌شود. ثبت شریک در بخش شرکا نیازی به حساب ورود ندارد.
         </p>
       </form>
     </div>

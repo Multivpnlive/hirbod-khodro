@@ -1,11 +1,12 @@
 import { Link, Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { LayoutDashboard, Car, Users, Wallet, FileBarChart, User, LogOut, MoreHorizontal, UserRound, ArrowLeftRight, ReceiptText, HandCoins, X } from "lucide-react";
+import { LayoutDashboard, Car, Database, Users, Wallet, FileBarChart, LogOut, MoreHorizontal, UserRound, ArrowLeftRight, HandCoins, X, Settings, Palette } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe, usePerms, type PermKey } from "@/lib/data";
 import { Button } from "@/components/ui/button";
+import { useBranding } from "@/lib/branding";
 
 const coreNav = [
   { to: "/dashboard", label: "داشبورد", icon: LayoutDashboard },
@@ -14,34 +15,45 @@ const coreNav = [
   { to: "/transactions", label: "تراکنش‌ها", icon: Wallet },
   { to: "/reports", label: "گزارش‌ها", icon: FileBarChart },
 ] as const;
+const accountNav = [
+  { to: "/branding", label: "تنظیمات ظاهر", icon: Palette },
+  { to: "/account", label: "حساب کاربری", icon: Settings },
+] as const;
 const featureNav = [
   { to: "/customers", label: "مشتریان", icon: UserRound },
-  { to: "/hawalas", label: "حواله‌ها", icon: ReceiptText },
   { to: "/receivables", label: "مطالبات فروش", icon: HandCoins },
   { to: "/fund-transfers", label: "انتقال وجه", icon: ArrowLeftRight },
-  { to: "/brokerage", label: "کارگزاری", icon: Wallet },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { data: me } = useMe();
+  const { branding } = useBranding();
   const { perms } = usePerms();
   const [moreOpen, setMoreOpen] = useState(false);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const staffFeatureNav = featureNav.filter((item) => {
+    if (item.to === "/customers") return perms.view_customers;
+    if (item.to === "/receivables") return perms.view_receivables;
+    if (item.to === "/fund-transfers") return perms.view_custody;
+    return false;
+  });
+  const hasAnyAccess = Object.values(perms).some(Boolean);
   const nav = me?.isAdmin
-    ? [...coreNav, ...featureNav]
+    ? [...coreNav, ...featureNav, { to: "/users", label: "مدیریت کاربران", icon: Users }, { to: "/backup", label: "مدیریت پشتیبان‌گیری", icon: Database }, ...accountNav]
     : [
-        { to: "/dashboard", label: "داشبورد", icon: LayoutDashboard },
-        { to: "/cars", label: "خودروها", icon: Car },
+        ...(hasAnyAccess ? [{ to: "/dashboard", label: "داشبورد", icon: LayoutDashboard }] : []),
+        ...((perms.view_all_cars || perms.create_car || perms.edit_car) ? [{ to: "/cars", label: "خودروها", icon: Car }] : []),
         ...(perms.view_all_partners ? [{ to: "/partners", label: "شرکا", icon: Users }] : []),
-        { to: "/transactions", label: "تراکنش‌ها", icon: Wallet },
-        { to: "/reports", label: "گزارش‌ها", icon: FileBarChart },
-        { to: "/my", label: "حساب من", icon: User },
-        ...featureNav,
+        ...((perms.view_transactions || perms.add_payment || perms.manage_settlements) ? [{ to: "/transactions", label: "تراکنش‌ها", icon: Wallet }] : []),
+        ...(hasAnyAccess ? [{ to: "/reports", label: "گزارش‌ها", icon: FileBarChart }] : []),
+        ...staffFeatureNav,
+        ...accountNav,
       ];
+  const desktopNav = nav.filter((n) => n.to !== "/account");
   const mobileNav = nav.filter((n) => ["/dashboard", "/cars", "/partners", "/transactions"].includes(n.to)).slice(0, 4);
-  const showMoreActive = featureNav.some((n) => pathname.startsWith(n.to));
+  const showMoreActive = [...featureNav, ...accountNav].some((n) => pathname.startsWith(n.to));
 
   async function signOut() {
     await qc.cancelQueries();
@@ -53,12 +65,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen md:flex">
       <aside className="hidden md:flex md:w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground p-5 gap-6 sticky top-0 h-screen">
-        <div>
-          <div className="text-xl font-extrabold">هیربد خودرو</div>
-          <div className="text-xs opacity-70 mt-1">{me?.isAdmin ? "مدیر اصلی" : "شریک"}</div>
+        <div className="flex items-center gap-3">
+          {branding.logo_url && <img src={branding.logo_url} alt={branding.company_name} className="size-11 rounded-lg bg-white object-contain p-1" />}
+          <div className="min-w-0">
+            <div className="text-lg font-extrabold truncate">{branding.app_name}</div>
+            <div className="text-xs opacity-70 mt-1 truncate">{branding.company_name}</div>
+            <div className="text-[11px] opacity-60 mt-1">{me?.isAdmin ? "مدیر اصلی" : me?.staffRole === "finance_manager" ? "مدیر مالی" : me?.staffRole === "sales" ? "فروشنده" : me?.staffRole === "limited" ? "کاربر محدود" : "شریک مالی"}</div>
+          </div>
         </div>
-        <nav className="flex flex-col gap-1">
-          {nav.map((n) => (
+        <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+          {desktopNav.map((n) => (
             <Link
               key={n.to}
               to={n.to}
@@ -70,7 +86,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
-        <div className="mt-auto space-y-4">
+        <div className="mt-auto space-y-4 border-t border-sidebar-border pt-4">
+          <Link
+            to="/account"
+            className="flex items-center gap-3 rounded-lg border border-sidebar-border px-3 py-2.5 text-sm hover:bg-sidebar-accent"
+            activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground border-transparent hover:bg-sidebar-primary" }}
+          >
+            <Settings className="size-4" />
+            حساب کاربری
+          </Link>
           <div className="text-xs opacity-70 truncate" dir="ltr">{me?.user.email}</div>
           <Button variant="secondary" size="sm" className="w-full" onClick={signOut}>
             <LogOut className="size-4" /> خروج
@@ -79,7 +103,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <header className="md:hidden flex items-center justify-between bg-sidebar text-sidebar-foreground px-4 py-3 sticky top-0 z-20">
-        <div className="font-extrabold">هیربد خودرو</div>
+        <div className="flex items-center gap-2 font-extrabold">{branding.logo_url && <img src={branding.logo_url} alt="" className="size-8 rounded bg-white object-contain p-0.5" />}{branding.app_name}</div>
         <button onClick={signOut} aria-label="خروج" className="rounded-lg p-2 hover:bg-sidebar-accent"><LogOut className="size-5" /></button>
       </header>
 
@@ -135,10 +159,10 @@ export function Stat({ label, value, tone }: { label: string; value: string; ton
   );
 }
 
-/** Gates a page behind admin role or a specific partner permission. */
+/** Gates a page behind admin role or the relevant staff permission. */
 export function PermOnly({ perm, children }: { perm?: PermKey; children: ReactNode }) {
   const { isAdmin, perms, isLoading } = usePerms();
   if (isLoading) return <div className="text-muted-foreground">در حال بارگذاری…</div>;
-  if (!isAdmin && !(perm && perms[perm])) return <Navigate to="/my" replace />;
+  if (!isAdmin && !(perm && perms[perm])) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }

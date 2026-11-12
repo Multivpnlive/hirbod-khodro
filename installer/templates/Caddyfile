@@ -1,0 +1,15 @@
+example.invalid {
+    encode zstd gzip
+
+    @supabase {
+        path /auth/v1 /auth/v1/* /rest/v1 /rest/v1/* /storage/v1 /storage/v1/* /realtime/v1 /realtime/v1/* /functions/v1 /functions/v1/* /graphql/v1 /graphql/v1/* /meta /meta/*
+    }
+
+    handle @supabase {
+        reverse_proxy 127.0.0.1:8000
+    }
+
+    handle {
+        reverse_proxy 127.0.0.1:3000
+    }
+}

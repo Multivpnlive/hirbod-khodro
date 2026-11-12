@@ -1,9 +1,4 @@
 const ITEMS = [
-  ["/customers", "مشتریان"],
-  ["/hawalas", "ثبت حواله"],
-  ["/receivables", "مطالبات فروش"],
-  ["/brokerage", "کارگزاری"],
-  ["/fund-transfers", "انتقال از امانی"],
 ] as const;
 
 export function FeatureLinks() {

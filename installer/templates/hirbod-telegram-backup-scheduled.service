@@ -1,0 +1,13 @@
+[Unit]
+Description=Hirbod Telegram Scheduled Backup
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=/opt/hirbod/app
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/python3 /opt/hirbod/app/scripts/telegram_backup.py scheduled
+TimeoutStartSec=2h
