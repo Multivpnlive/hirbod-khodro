@@ -118,7 +118,13 @@ else
 fi
 
 if command -v ss >/dev/null 2>&1; then
-  for PORT in 80 443 3000 8000 5432 54321; do
+  if ss -ltnH "( sport = :80 )" 2>/dev/null | grep -q .; then
+    warn "TCP port 80 is occupied; HTTPS will use TLS-ALPN on port 443"
+  else
+    ok "TCP port 80 is available (not required for TLS-ALPN)"
+  fi
+
+  for PORT in 443 3000 8000 5432 54321; do
     if ss -ltnH "( sport = :$PORT )" 2>/dev/null | grep -q .; then
       fail "TCP port $PORT is already listening"
     else
@@ -148,12 +154,12 @@ fi
 if command -v ufw >/dev/null 2>&1; then
   UFW_STATUS="$(ufw status 2>/dev/null | head -n 1 || true)"
   case "$UFW_STATUS" in
-    "Status: active")   warn "UFW is active; firewall rules must be reviewed before deployment" ;;
-    "Status: inactive") ok "UFW is not active" ;;
+    "Status: active")   warn "UFW is active; existing firewall settings will be left unchanged. Verify inbound TCP 443 is allowed." ;;
+    "Status: inactive") ok "UFW is inactive; installer will not enable or modify it" ;;
     *)                  warn "Could not determine UFW status" ;;
   esac
 else
-  warn "UFW is not installed; firewall setup will be handled by the installer"
+  warn "UFW is not installed; installer will not manage firewall rules. Ensure inbound TCP 443 is allowed."
 fi
 
 echo

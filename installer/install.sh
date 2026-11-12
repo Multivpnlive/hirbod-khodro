@@ -90,9 +90,9 @@ step "Configuring optional Telegram backups"
 python3 "$RELEASE/installer/configure-telegram.py"
 bash "$RELEASE/installer/install-backup-units.sh"
 
-step "Installing Caddy and firewall"
+step "Installing Caddy"
 bash "$RELEASE/installer/install-caddy.sh"
-bash "$RELEASE/installer/configure-firewall.sh"
+echo "[INFO] Existing firewall settings will not be modified."
 
 step "Starting Hirbod application"
 bash "$RELEASE/installer/start-app.sh"
