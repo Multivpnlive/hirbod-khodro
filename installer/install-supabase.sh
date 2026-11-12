@@ -50,6 +50,16 @@ DB="$ROOT/supabase-project"
 [[ -f "$DB/utils/add-new-auth-keys.sh" ]] || die "Auth key generator missing"
 
 chmod 600 "$DB/.env"
+
+# SQL initialization files are not secrets; PostgreSQL must be able to read them.
+SQL_DIR="$DB/volumes/db"
+[[ -d "$SQL_DIR" ]] || die "Supabase database initialization directory is missing"
+mapfile -d '' SQL_FILES < <(find "$SQL_DIR" -type f -name '*.sql' -print0)
+((${#SQL_FILES[@]} > 0)) || die "No Supabase database initialization SQL files found"
+chmod 644 "${SQL_FILES[@]}"
+for SQL_FILE in "${SQL_FILES[@]}"; do
+    [[ -r "$SQL_FILE" ]] || die "Supabase SQL file is not readable: ${SQL_FILE#"$DB"/}"
+done
 rm -f "$DB/.env.old" "$DB/docker-compose.yml.old"
 
 echo "[PASS] Supabase source installed: $REF"
