@@ -45,6 +45,7 @@ old_secret="$(read_env_value "$ENV_FILE" SEND_EMAIL_HOOK_SECRET)"
 if (( CHECK_ONLY )); then
   [[ -n "$old_api_key" && "$old_api_key" == re_* ]] || die "Resend API key is not configured"
   [[ -n "$old_secret" ]] || die "Email hook secret is not configured"
+  [[ -n "$old_from" ]] || die "Sender identity is not configured"
   docker compose -f "$COMPOSE_FILE" config --quiet
   systemctl is-active --quiet hirbod-mailer.service || die "Email service is not active"
   docker exec supabase-auth wget -qO- -T 4 http://host.docker.internal:8787/health >/dev/null ||
@@ -54,7 +55,7 @@ if (( CHECK_ONLY )); then
 fi
 
 api_key="$old_api_key"
-from_address="${old_from:-Hirbod Khodro <no-reply@send.multiroxynet.ir>}"
+from_address="$old_from"
 hook_secret="$old_secret"
 
 if (( ! ASSUME_YES )) && [[ -t 0 && -r /dev/tty ]]; then
@@ -62,7 +63,7 @@ if (( ! ASSUME_YES )) && [[ -t 0 && -r /dev/tty ]]; then
   IFS= read -r -s entered_api_key </dev/tty
   printf '\n' >/dev/tty
   [[ -z "$entered_api_key" ]] || api_key="$entered_api_key"
-  printf 'Sender identity [%s]: ' "$from_address" >/dev/tty
+  printf 'Sender identity (must use a domain verified in Resend): ' >/dev/tty
   IFS= read -r entered_from </dev/tty
   [[ -z "$entered_from" ]] || from_address="$entered_from"
 elif [[ -z "$api_key" ]]; then
@@ -70,10 +71,11 @@ elif [[ -z "$api_key" ]]; then
 fi
 
 [[ "$api_key" =~ ^re_[A-Za-z0-9_-]+$ ]] || die "Invalid Resend API key format"
+[[ -n "$from_address" ]] || die "Sender identity is required; use an address on a domain verified in Resend"
 sender_email="${from_address##*<}"
 sender_email="${sender_email%%>*}"
 [[ "$sender_email" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]] ||
-  die "Sender must be a verified identity such as Hirbod Khodro <no-reply@example.com>"
+  die "Sender must use a domain verified in Resend, for example Hirbod Khodro <no-reply@your-domain.tld>"
 [[ "$from_address" != *$'\n'* ]] || die "Sender identity contains a newline"
 if [[ -z "$hook_secret" ]]; then
   command -v openssl >/dev/null || die "openssl is required to generate the hook secret"
