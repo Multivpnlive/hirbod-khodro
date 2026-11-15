@@ -3,12 +3,12 @@ import crypto from "node:crypto";
 
 const HOST = process.env.HIRBOD_MAILER_HOST || "127.0.0.1";
 const PORT = Number(process.env.HIRBOD_MAILER_PORT || 8787);
-const FROM = process.env.HIRBOD_MAIL_FROM || "Hirbod Khodro <no-reply@send.multiroxynet.ir>";
+const FROM = process.env.HIRBOD_MAIL_FROM || "";
 const API_KEY = process.env.RESEND_API_KEY;
 const SECRET_LIST = (process.env.SEND_EMAIL_HOOK_SECRET || "").split("|").filter(Boolean);
 
-if (!API_KEY || !API_KEY.startsWith("re_") || SECRET_LIST.length === 0) {
-  throw new Error("Required mailer credentials are missing");
+if (!FROM || !API_KEY || !API_KEY.startsWith("re_") || SECRET_LIST.length === 0) {
+  throw new Error("Mailer sender identity or required credentials are missing");
 }
 
 function verifySignature(raw, headers) {
