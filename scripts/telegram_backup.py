@@ -52,29 +52,20 @@ def atomic_json(path, value):
 def detect_supabase_gateway():
     result = subprocess.run(
         [
-            "docker", "inspect",
-            "--format", "{{json .NetworkSettings.Networks}}",
-            "supabase-auth",
+            "docker", "exec", "supabase-auth", "awk",
+            '$2 == "host.docker.internal" {print $1; exit}', "/etc/hosts",
         ],
         capture_output=True,
         text=True,
         check=True,
-        timeout=30,
+        timeout=20,
     )
-    networks = json.loads(result.stdout)
-    default_networks = {
-        name: data for name, data in networks.items()
-        if name.endswith("_default")
-    }
-    candidates = default_networks or networks
-    gateways = {
-        str(ipaddress.IPv4Address(data.get("Gateway", "")))
-        for data in candidates.values()
-        if data.get("Gateway")
-    }
-    if len(gateways) != 1:
-        raise RuntimeError("Gateway سرویس Supabase به‌صورت یکتا شناسایی نشد.")
-    return gateways.pop()
+    try:
+        return str(ipaddress.IPv4Address(result.stdout.strip()))
+    except ipaddress.AddressValueError as exc:
+        raise RuntimeError(
+            "Gateway میزبان از داخل کانتینر Supabase Auth شناسایی نشد."
+        ) from exc
 
 def write_mailer_gateway_override(gateway):
     path = Path(
