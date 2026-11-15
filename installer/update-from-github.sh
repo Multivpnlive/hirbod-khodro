@@ -58,7 +58,7 @@ PY
     echo "[INFO] Detected domain: $DOMAIN"
   else
     [[ -t 0 ]] || die "Could not detect domain; provide --domain"
-    read -r -p "دامنه سامانه: " DOMAIN
+    read -r -p "Application domain: " DOMAIN
     DOMAIN="${DOMAIN#https://}"; DOMAIN="${DOMAIN#http://}"
     HEALTH_URL="https://$DOMAIN"
   fi
@@ -95,14 +95,14 @@ fi
 
 if (( ! MODE_SELECTED )) && [[ -t 0 ]]; then
   echo
-  echo "دامنه: $HEALTH_URL"
-  echo "نسخه مقصد: $VERSION_TAG"
-  echo "1) پیش‌بررسی، بدون اعمال تغییرات (پیشنهادی)"
-  echo "2) اجرای واقعی به‌روزرسانی"
-  read -r -p "انتخاب شما [1]: " choice
+  echo "Domain: $HEALTH_URL"
+  echo "Target version: $VERSION_TAG"
+  echo "1) Preflight only (recommended; no changes)"
+  echo "2) Apply the update"
+  read -r -p "Select an option [1]: " choice
   case "$choice" in
     2)
-      read -r -p "برای تأیید، UPDATE را وارد کنید: " approval
+      read -r -p "To confirm, type UPDATE: " approval
       [[ "$approval" == "UPDATE" ]] || die "Update cancelled"
       CONFIRM=1 ;;
     ""|1) DRY_RUN=1 ;;
