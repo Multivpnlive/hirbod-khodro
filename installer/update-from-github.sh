@@ -27,7 +27,7 @@ while (($#)); do
     --yes) CONFIRM=1; MODE_SELECTED=1; shift ;;
     --dry-run) DRY_RUN=1; MODE_SELECTED=1; shift ;;
     --help|-h)
-      echo "Usage: update-from-github.sh [--domain example.com] [--dry-run|--yes] [--version v1.1.0]"
+      echo "Usage: update-from-github.sh [--domain example.com] [--dry-run|--yes] [--version v1.1.4]"
       exit 0 ;;
     *) die "Unknown argument: $1" ;;
   esac
