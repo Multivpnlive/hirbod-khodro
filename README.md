@@ -52,6 +52,25 @@ bash installer/update-from-github.sh --domain app.example.com --dry-run
 bash installer/update-from-github.sh --domain app.example.com --yes
 ```
 
+## ایمیل تأیید حساب و بازیابی رمز عبور
+
+برای نصب ایمیل‌های Supabase Auth از طریق Resend، ابتدا دامنهٔ فرستنده را در Resend تأیید کنید و یک API Key ارسال ایمیل بسازید. سپس روی سرور اجرا کنید:
+
+```bash
+cd /opt/hirbod/app
+bash installer/setup-email.sh
+```
+
+برای بررسی اتصال بدون تغییر تنظیمات:
+
+```bash
+bash installer/setup-email.sh --check
+```
+
+پس از نصب، از صفحهٔ ورود گزینهٔ «فراموشی رمز عبور» را برای یک حساب آزمایشی انتخاب کنید. راهنمای کامل در [راهنمای نصب ایمیل](installer/README.md) و اسکریپت در [installer/setup-email.sh](installer/setup-email.sh) است.
+
+کلید Resend و secret فقط روی سرور می‌مانند. فایل‌های بکاپ نسخهٔ ۳ این تنظیمات را بدون رمزگذاری دارند؛ دسترسی به فایل‌های بکاپ را محدود نگه دارید.
+
 ## پشتیبان‌گیری و بازیابی
 
 پشتیبان‌گیری زمان‌بندی‌شده در نصب استاندارد فعال می‌شود. فایل‌های پشتیبان با پسوند `.hirbod` برای نگهداری و بازیابی اطلاعات استفاده می‌شوند.
