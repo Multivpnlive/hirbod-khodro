@@ -32,7 +32,6 @@ need_file installer/start-app.sh
 need_file installer/prepare-restore.sh
 need_file installer/install-app.sh
 need_file installer/install.sh
-need_file installer/bootstrap.sh
 need_file installer/configure-runtime-env.sh
 need_file installer/secure-supabase-env.sh
 need_file installer/configure-domain.sh

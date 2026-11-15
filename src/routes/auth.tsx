@@ -34,6 +34,7 @@ function AuthPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    const normalizedEmail = email.trim();
     setBusy(true);
     try {
       if (mode === "in") {
@@ -76,7 +77,11 @@ function AuthPage() {
           redirectTo: window.location.origin + "/reset-password",
         });
         if (error) throw error;
-        toast.success("لینک بازیابی رمز ارسال شد.");
+        toast.success("کد شش‌رقمی بازیابی به ایمیل شما ارسال شد.");
+        window.location.assign(
+          window.location.origin + "/reset-password?email=" + encodeURIComponent(normalizedEmail)
+        );
+        return;
       }
     } catch (err) {
       toast.error((err as Error).message === "Invalid login credentials" ? "ایمیل یا رمز عبور اشتباه است" : (err as Error).message);
@@ -111,7 +116,7 @@ function AuthPage() {
           </div>
         )}
         <Button className="w-full" disabled={busy}>
-          {mode === "in" ? "ورود" : "ارسال لینک"}
+          {busy ? "لطفاً صبر کنید…" : mode === "in" ? "ورود" : "ارسال کد بازیابی"}
         </Button>
         <div className="flex justify-end text-sm">
           {mode === "in" ? (
@@ -124,9 +129,6 @@ function AuthPage() {
             </button>
           )}
         </div>
-        <p className="text-xs text-muted-foreground leading-6">
-          ایجاد حساب کاربری فقط با تأیید مدیر مجموعه انجام می‌شود. ثبت شریک در بخش شرکا نیازی به حساب ورود ندارد.
-        </p>
       </form>
     </div>
   );

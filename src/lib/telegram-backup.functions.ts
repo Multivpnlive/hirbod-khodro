@@ -118,7 +118,7 @@ export const saveTelegramBackupSettings = createServerFn({ method: "POST" })
     if (chatId && !/^(?:-?\d{1,20}|@[A-Za-z0-9_]{5,})$/.test(chatId)) {
       throw new Error("شناسه مقصد تلگرام معتبر نیست.");
     }
-    if (![4, 6, 12, 24, 48, 72, 168].includes(scheduleHours)) {
+    if (![0.5, 1, 2, 4, 6, 12, 24].includes(scheduleHours)) {
       throw new Error("فاصله زمانی بکاپ معتبر نیست.");
     }
     if (proxyMode === "socks5") {
@@ -191,8 +191,23 @@ export const saveTelegramBackupSettings = createServerFn({ method: "POST" })
     const { promisify } = await import("node:util");
     const exec = promisify(execFile);
 
+    const timerInterval = data.scheduleHours === 0.5
+      ? "30min"
+      : `${data.scheduleHours}h`;
+    const timerDir = "/etc/systemd/system/hirbod-telegram-backup.timer.d";
+    const timerOverride = `${timerDir}/override.conf`;
+    await fs.mkdir(timerDir, { recursive: true, mode: 0o755 });
+    const timerTemp = `${timerOverride}.${crypto.randomUUID()}.tmp`;
+    const timerContent =
+      `[Timer]\nOnCalendar=\nOnBootSec=10min\nOnUnitActiveSec=${timerInterval}\nRandomizedDelaySec=60s\n`;
+    await fs.writeFile(timerTemp, timerContent, { mode: 0o644 });
+    await fs.rename(timerTemp, timerOverride);
+    await fs.chmod(timerOverride, 0o644);
+    await exec("systemctl", ["daemon-reload"], { timeout: 30000 });
+
     if (data.enabled) {
-      await exec("systemctl", ["enable", "--now", "hirbod-telegram-backup.timer"], { timeout: 30000 });
+      await exec("systemctl", ["enable", "hirbod-telegram-backup.timer"], { timeout: 30000 });
+      await exec("systemctl", ["restart", "hirbod-telegram-backup.timer"], { timeout: 30000 });
     } else {
       await exec("systemctl", ["disable", "--now", "hirbod-telegram-backup.timer"], { timeout: 30000 }).catch(() => {});
     }
