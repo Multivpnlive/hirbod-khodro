@@ -110,6 +110,8 @@ services:
     container_name: supabase-auth
     image: supabase/gotrue:v2.197.0
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test:
         [
@@ -137,7 +139,6 @@ services:
 
       GOTRUE_SITE_URL: ${SITE_URL}
       GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS}
-      GOTRUE_MAILER_EXTERNAL_HOSTS: hirbod.multiroxynet.ir
       GOTRUE_DISABLE_SIGNUP: ${DISABLE_SIGNUP}
 
       GOTRUE_JWT_ADMIN_ROLES: service_role
@@ -243,9 +244,10 @@ services:
       # GOTRUE_HOOK_SEND_SMS_URI: "pg-functions://postgres/public/custom_access_token_hook"
       # GOTRUE_HOOK_SEND_SMS_SECRETS: "v1,whsec_VGhpcyBpcyBhbiBleGFtcGxlIG9mIGEgc2hvcnRlciBCYXNlNjQgc3RyaW5n"
 
-      # GOTRUE_HOOK_SEND_EMAIL_ENABLED: "false"
-      # GOTRUE_HOOK_SEND_EMAIL_URI: "http://host.docker.internal:54321/functions/v1/email_sender"
-      # GOTRUE_HOOK_SEND_EMAIL_SECRETS: "v1,whsec_VGhpcyBpcyBhbiBleGFtcGxlIG9mIGEgc2hvcnRlciBCYXNlNjQgc3RyaW5n"
+      # Optional Hirbod email gateway; disabled unless setup-email.sh is run.
+      GOTRUE_HOOK_SEND_EMAIL_ENABLED: ${GOTRUE_HOOK_SEND_EMAIL_ENABLED:-false}
+      GOTRUE_HOOK_SEND_EMAIL_URI: ${GOTRUE_HOOK_SEND_EMAIL_URI:-http://host.docker.internal:8787/hooks/send-email}
+      GOTRUE_HOOK_SEND_EMAIL_SECRETS: ${SEND_EMAIL_HOOK_SECRET:-}
 
   rest:
     container_name: supabase-rest

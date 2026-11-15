@@ -376,13 +376,13 @@ function TelegramBackupPage() {
               onChange={(e) => setScheduleHours(e.target.value)}
               className="w-full rounded-md border bg-background px-3 py-2.5 text-sm"
             >
+              <option value="0.5">هر ۳۰ دقیقه</option>
+              <option value="1">هر ۱ ساعت</option>
+              <option value="2">هر ۲ ساعت</option>
               <option value="4">هر ۴ ساعت</option>
               <option value="6">هر ۶ ساعت</option>
               <option value="12">هر ۱۲ ساعت</option>
               <option value="24">هر ۲۴ ساعت</option>
-              <option value="48">هر ۲ روز</option>
-              <option value="72">هر ۳ روز</option>
-              <option value="168">هر ۷ روز</option>
             </select>
           </div>
         </div>

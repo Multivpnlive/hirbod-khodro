@@ -1,6 +1,6 @@
 # هیربد خودرو | Hirbod Khodro
 
-**نسخه انتشار: 1.1.0**
+**نسخه انتشار: 1.1.2**
 
 سامانه فارسی مدیریت خریدوفروش خودرو، حسابداری شرکا و مدیریت مالی کسب‌وکارهای خودرویی؛ قابل نصب روی سرور اختصاصی با Ubuntu.
 
@@ -81,6 +81,6 @@ bash installer/update-from-github.sh --domain app.example.com --yes
 
 ## انتشار
 
-نسخه فعلی: **1.1.0**
+نسخه فعلی: **1.1.2**
 
 [مشاهده نسخه‌ها در GitHub](https://github.com/Multivpnlive/hirbod-khodro/releases)

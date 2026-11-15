@@ -10,16 +10,11 @@ DIR=/etc/hirbod
 [[ $EUID -eq 0 ]] || exit 1
 [[ -f "$ROOT/.hirbod-install-in-progress" ]] || exit 1
 [[ -f "$ENV" ]] || exit 1
-[[ $# -eq 1 ]] || { echo "Usage: configure-runtime-env.sh domain"; exit 2; }
-
-DOMAIN="$1"
-[[ "$DOMAIN" =~ ^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$ ]] || exit 2
-
-python3 - "$ENV" "$DIR" "$DOMAIN" <<'PY'
+python3 - "$ENV" "$DIR" <<'PY'
 import sys, os, tempfile
 from pathlib import Path
 
-envfile, directory, domain = sys.argv[1:]
+envfile, directory = sys.argv[1:]
 values = {}
 
 for line in Path(envfile).read_text().splitlines():

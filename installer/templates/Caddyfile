@@ -1,4 +1,14 @@
-example.invalid {
+{
+    auto_https disable_redirects
+}
+
+https://example.invalid {
+    tls {
+        issuer acme {
+            disable_http_challenge
+        }
+    }
+
     encode zstd gzip
 
     @supabase {

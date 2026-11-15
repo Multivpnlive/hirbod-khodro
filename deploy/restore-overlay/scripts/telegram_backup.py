@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from urllib.parse import urlencode
 import logging
 import re
+import ipaddress
 
 CONFIG = Path("/etc/hirbod/telegram-backup.json")
 STATE_DIR = Path("/var/lib/hirbod-backup")
@@ -47,6 +48,37 @@ def atomic_json(path, value):
     tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
     os.chmod(tmp, 0o600)
     os.replace(tmp, path)
+
+def detect_supabase_gateway():
+    result = subprocess.run(
+        [
+            "docker", "exec", "supabase-auth", "awk",
+            '$2 == "host.docker.internal" {print $1; exit}', "/etc/hosts",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=20,
+    )
+    try:
+        return str(ipaddress.IPv4Address(result.stdout.strip()))
+    except ipaddress.AddressValueError as exc:
+        raise RuntimeError(
+            "Gateway میزبان از داخل کانتینر Supabase Auth شناسایی نشد."
+        ) from exc
+
+def write_mailer_gateway_override(gateway):
+    path = Path(
+        "/etc/systemd/system/hirbod-mailer.service.d/zz-hirbod-docker-gateway.conf"
+    )
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
+    temp = path.with_name(path.name + ".tmp")
+    temp.write_text(
+        "[Service]\nEnvironment=HIRBOD_MAILER_HOST=" + gateway + "\n",
+        encoding="utf-8",
+    )
+    os.chmod(temp, 0o644)
+    os.replace(temp, path)
 
 def read_json(path, default=None):
     try:
@@ -359,6 +391,16 @@ def create_archive(work, backup_id):
     except Exception:
         app_version = "unknown"
 
+    mailer_required_paths = (
+        Path("/opt/hirbod-mailer/server.mjs"),
+        Path("/etc/hirbod-mailer/secrets.env"),
+        Path("/etc/systemd/system/hirbod-mailer.service"),
+    )
+    mailer_present = [path.is_file() and not path.is_symlink() for path in mailer_required_paths]
+    if any(mailer_present) and not all(mailer_present):
+        raise RuntimeError("تنظیمات سرویس ایمیل ناقص است و در بکاپ وارد نمی‌شود.")
+    mailer_included = all(mailer_present)
+
     info = {
         "product": "Hirbod Khodro",
         "format": "hirbod-single-file-backup",
@@ -384,7 +426,8 @@ def create_archive(work, backup_id):
         "storage_path": "opt/hirbod/supabase-project/volumes/storage",
 
         "ownership_preserved": True,
-        "encrypted": False
+        "encrypted": False,
+        "email_service_included": mailer_included,
     }
 
     info_path = work / "backup-info.json"
@@ -410,6 +453,14 @@ def create_archive(work, backup_id):
         "etc/systemd/system/hirbod-telegram-backup-scheduled.service",
         "etc/systemd/system/hirbod-telegram-backup.timer",
     ]
+
+    if mailer_included:
+        optional_paths.extend([
+            "opt/hirbod-mailer/server.mjs",
+            "etc/hirbod-mailer/secrets.env",
+            "etc/systemd/system/hirbod-mailer.service",
+            "etc/systemd/system/hirbod-mailer.service.d",
+        ])
 
     for item in optional_paths:
         if Path("/" + item).exists():
@@ -462,6 +513,12 @@ def create_archive(work, backup_id):
         "opt/hirbod/supabase-project/docker-compose.yml",
         "supabase_db-config/pgsodium_root.key",
     }
+    if mailer_included:
+        required.update({
+            "opt/hirbod-mailer/server.mjs",
+            "etc/hirbod-mailer/secrets.env",
+            "etc/systemd/system/hirbod-mailer.service",
+        })
 
     with tarfile.open(archive, "r:gz") as tar:
         members = tar.getmembers()
@@ -558,16 +615,21 @@ def inspect_archive(archive_path):
                 name = member.name
                 pure = PurePosixPath(name)
 
-                if pure.is_absolute() or ".." in pure.parts:
+                canonical_name = pure.as_posix()
+                if (
+                    pure.is_absolute()
+                    or ".." in pure.parts
+                    or canonical_name != name.rstrip("/")
+                ):
                     raise RuntimeError(
                         "مسیر غیرمجاز داخل فایل بکاپ شناسایی شد."
                     )
 
-                if name in names:
+                if canonical_name in names:
                     raise RuntimeError(
                         "نام تکراری داخل آرشیو شناسایی شد."
                     )
-                names.add(name)
+                names.add(canonical_name)
 
                 if not (member.isfile() or member.isdir()):
                     raise RuntimeError(
@@ -580,7 +642,7 @@ def inspect_archive(archive_path):
                         "حجم استخراج‌شده آرشیو بیش از حد مجاز است."
                     )
 
-                member_by_name[name] = member
+                member_by_name[canonical_name] = member
 
             missing = sorted(required - names)
             if missing:
@@ -609,6 +671,34 @@ def inspect_archive(archive_path):
                 raise RuntimeError("خواندن مشخصات بکاپ ناموفق بود.")
 
             info = json.loads(info_file.read().decode("utf-8"))
+
+            email_required = {
+                "opt/hirbod-mailer/server.mjs",
+                "etc/hirbod-mailer/secrets.env",
+                "etc/systemd/system/hirbod-mailer.service",
+            }
+            present_email = email_required & names
+            if present_email and present_email != email_required:
+                raise RuntimeError("آرشیو فقط بخشی از فایل‌های سرویس ایمیل را دارد.")
+            if present_email and any(
+                not member_by_name[name].isfile() for name in email_required
+            ):
+                raise RuntimeError("اجزای سرویس ایمیل باید فایل معمولی باشند.")
+            email_file_limits = {
+                "opt/hirbod-mailer/server.mjs": 1024 * 1024,
+                "etc/hirbod-mailer/secrets.env": 64 * 1024,
+                "etc/systemd/system/hirbod-mailer.service": 128 * 1024,
+            }
+            for name, max_size in email_file_limits.items():
+                if name in present_email:
+                    member = member_by_name[name]
+                    if member.size > max_size or member.mode & 0o022:
+                        raise RuntimeError("فایل سرویس ایمیل اندازه یا مجوز نامعتبر دارد.")
+            if (
+                "email_service_included" in info
+                and info["email_service_included"] is not bool(present_email)
+            ):
+                raise RuntimeError("مشخصات وجود فایل‌های ایمیل با محتوای آرشیو تطبیق ندارد.")
 
             if info.get("product") != "Hirbod Khodro":
                 raise RuntimeError("این فایل متعلق به هیربد خودرو نیست.")
@@ -952,6 +1042,12 @@ def restore_archive_v3(archive_path, job_id):
     old_app = snapshot / "old-app"
     old_project = snapshot / "old-supabase-project"
     old_volume = snapshot / "old-db-config"
+    email_service_paths = (
+        Path("/opt/hirbod-mailer/server.mjs"),
+        Path("/etc/hirbod-mailer/secrets.env"),
+        Path("/etc/systemd/system/hirbod-mailer.service"),
+        Path("/etc/systemd/system/hirbod-mailer.service.d"),
+    )
 
     moved_app = False
     moved_project = False
@@ -1113,6 +1209,38 @@ def restore_archive_v3(archive_path, job_id):
                 dirs_exist_ok=True,
                 symlinks=False,
             )
+
+        email_service_manifest = {
+            str(target): target.exists() for target in email_service_paths
+        }
+        email_service_state = {
+            "paths": email_service_manifest,
+            "active": subprocess.run(
+                ["systemctl", "is-active", "--quiet", "hirbod-mailer.service"],
+                check=False,
+            ).returncode == 0,
+            "enabled": subprocess.run(
+                ["systemctl", "is-enabled", "hirbod-mailer.service"],
+                capture_output=True,
+                text=True,
+                check=False,
+            ).stdout.strip(),
+            "snapshot_complete": False,
+        }
+        atomic_json(snapshot / "email-service-manifest.json", email_service_state)
+
+        for target in email_service_paths:
+            if not target.exists():
+                continue
+            destination = snapshot / "email-service" / target.relative_to("/")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if target.is_dir():
+                shutil.copytree(target, destination, dirs_exist_ok=True, symlinks=False)
+            else:
+                shutil.copy2(target, destination)
+
+        email_service_state["snapshot_complete"] = True
+        atomic_json(snapshot / "email-service-manifest.json", email_service_state)
 
         for config in (
             "/etc/caddy/Caddyfile",
@@ -1293,13 +1421,55 @@ def restore_archive_v3(archive_path, job_id):
 
         progress("running", "restore-config", 40, "بازگردانی تنظیمات و کلیدهای سرور")
 
-        # Keep host-specific Caddy and systemd units from the destination.
-        # Restore application secrets and Telegram configuration only.
+        # Keep host-specific Caddy and unrelated systemd units from the destination.
+        # Restore application, Telegram, and optional mailer settings.
         config_items = (
             ("etc/hirbod/hirbod-runtime.env", "/etc/hirbod/hirbod-runtime.env"),
             ("etc/hirbod/hirbod-admin.env", "/etc/hirbod/hirbod-admin.env"),
             ("etc/hirbod/telegram-backup.json", "/etc/hirbod/telegram-backup.json"),
         )
+
+        staged_mailer_paths = (
+            stage / "opt/hirbod-mailer/server.mjs",
+            stage / "etc/hirbod-mailer/secrets.env",
+            stage / "etc/systemd/system/hirbod-mailer.service",
+        )
+        mailer_members_present = [path.is_file() for path in staged_mailer_paths]
+        if any(mailer_members_present) and not all(mailer_members_present):
+            raise RuntimeError("تنظیمات سرویس ایمیل داخل بکاپ ناقص است.")
+        email_service_restored = all(mailer_members_present)
+        previous_mailer_state = read_json(
+            snapshot / "email-service-manifest.json", {}
+        ) or {}
+        previous_mailer_paths = previous_mailer_state.get("paths", {})
+        mailer_was_installed = all(
+            previous_mailer_paths.get(path)
+            for path in (
+                "/opt/hirbod-mailer/server.mjs",
+                "/etc/hirbod-mailer/secrets.env",
+                "/etc/systemd/system/hirbod-mailer.service",
+            )
+        )
+
+        if email_service_restored:
+            config_items += (
+                ("opt/hirbod-mailer/server.mjs", "/opt/hirbod-mailer/server.mjs"),
+                ("etc/hirbod-mailer/secrets.env", "/etc/hirbod-mailer/secrets.env"),
+                (
+                    "etc/systemd/system/hirbod-mailer.service",
+                    "/etc/systemd/system/hirbod-mailer.service",
+                ),
+                (
+                    "etc/systemd/system/hirbod-mailer.service.d",
+                    "/etc/systemd/system/hirbod-mailer.service.d",
+                ),
+            )
+
+            previous_mailer = read_json(
+                snapshot / "email-service-manifest.json", {}
+            ) or {}
+            if previous_mailer.get("active"):
+                run_logged(["systemctl", "stop", "hirbod-mailer.service"], timeout=60)
 
         for source, target in config_items:
             restore_config_file(stage / source, target)
@@ -1469,7 +1639,16 @@ def restore_archive_v3(archive_path, job_id):
 
         progress("running", "systemd", 92, "فعال‌سازی سرویس‌های برنامه و وب")
 
+        if email_service_restored or mailer_was_installed:
+            docker_gateway = detect_supabase_gateway()
+            write_mailer_gateway_override(docker_gateway)
+
         run_logged(["systemctl", "daemon-reload"], timeout=60)
+        if email_service_restored:
+            run_logged(["systemctl", "enable", "hirbod-mailer.service"], timeout=60)
+            run_logged(["systemctl", "restart", "hirbod-mailer.service"], timeout=60)
+        elif mailer_was_installed and previous_mailer_state.get("active"):
+            run_logged(["systemctl", "restart", "hirbod-mailer.service"], timeout=60)
         run_logged(["systemctl", "enable", "docker", "caddy", "hirbod-app.service"], timeout=60)
         run_logged(["systemctl", "restart", "caddy"], timeout=120)
         run_logged(["systemctl", "restart", "hirbod-app.service"], timeout=120)
@@ -1578,6 +1757,22 @@ def restore_archive_v3(archive_path, job_id):
                 shutil.rmtree("/etc/hirbod", ignore_errors=True)
                 shutil.copytree(snapshot / "etc-hirbod", "/etc/hirbod")
 
+            email_manifest = read_json(snapshot / "email-service-manifest.json", {}) or {}
+            if email_manifest.get("snapshot_complete"):
+                previous_email_paths = email_manifest.get("paths", {})
+                for target in email_service_paths:
+                    if target.is_dir() and not target.is_symlink():
+                        shutil.rmtree(target, ignore_errors=True)
+                    else:
+                        target.unlink(missing_ok=True)
+                    if previous_email_paths.get(str(target)):
+                        source = snapshot / "email-service" / target.relative_to("/")
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        if source.is_dir():
+                            shutil.copytree(source, target, dirs_exist_ok=True, symlinks=False)
+                        elif source.is_file():
+                            shutil.copy2(source, target)
+
             saved_configs = snapshot / "config"
             if saved_configs.is_dir():
                 for root, dirs, files in os.walk(saved_configs):
@@ -1601,6 +1796,43 @@ def restore_archive_v3(archive_path, job_id):
                 capture_output=True,
                 timeout=1200,
             )
+
+            previous_mailer_paths = email_manifest.get("paths", {})
+            mailer_unit_path = "/etc/systemd/system/hirbod-mailer.service"
+            if (
+                email_manifest.get("snapshot_complete")
+                and previous_mailer_paths.get(mailer_unit_path)
+            ):
+                write_mailer_gateway_override(detect_supabase_gateway())
+                subprocess.run(
+                    ["systemctl", "daemon-reload"],
+                    capture_output=True,
+                    timeout=60,
+                    check=True,
+                )
+                if email_manifest.get("enabled") == "enabled":
+                    subprocess.run(
+                        ["systemctl", "enable", "hirbod-mailer.service"],
+                        capture_output=True,
+                        timeout=60,
+                        check=True,
+                    )
+                elif email_manifest.get("enabled") == "disabled":
+                    subprocess.run(
+                        ["systemctl", "disable", "hirbod-mailer.service"],
+                        capture_output=True,
+                        timeout=60,
+                        check=True,
+                    )
+                if email_manifest.get("active"):
+                    run_logged(["systemctl", "restart", "hirbod-mailer.service"], timeout=60)
+                else:
+                    subprocess.run(
+                        ["systemctl", "stop", "hirbod-mailer.service"],
+                        capture_output=True,
+                        timeout=60,
+                        check=True,
+                    )
 
             subprocess.run(
                 ["systemctl", "restart", "caddy", "hirbod-app.service"],

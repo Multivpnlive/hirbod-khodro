@@ -71,19 +71,19 @@ else
 fi
 
 MEM_KB="$(awk '/MemTotal:/ {print $2}' /proc/meminfo)"
-MEM_GB=$(( MEM_KB / 1024 / 1024 ))
-if (( MEM_GB >= 4 )); then
-  ok "RAM: approximately ${MEM_GB} GiB"
+MEM_GIB="$(awk -v kb="$MEM_KB" 'BEGIN {printf "%.1f", kb / 1024 / 1024}')"
+if (( MEM_KB >= 3 * 1024 * 1024 )); then
+  ok "RAM: approximately ${MEM_GIB} GiB"
 else
-  fail "At least 4 GiB RAM required; found approximately ${MEM_GB} GiB"
+  warn "RAM is below 3 GiB: approximately ${MEM_GIB} GiB"
 fi
 
 DISK_KB="$(df -Pk / | awk 'NR==2 {print $4}')"
-DISK_GB=$(( DISK_KB / 1024 / 1024 ))
-if (( DISK_GB >= 25 )); then
-  ok "Available root filesystem space: approximately ${DISK_GB} GiB"
+DISK_GIB="$(awk -v kb="$DISK_KB" 'BEGIN {printf "%.1f", kb / 1024 / 1024}')"
+if (( DISK_KB >= 15 * 1024 * 1024 )); then
+  ok "Available root filesystem space: approximately ${DISK_GIB} GiB"
 else
-  fail "At least 25 GiB free on / required; found approximately ${DISK_GB} GiB"
+  warn "Available root filesystem space is below 15 GiB: approximately ${DISK_GIB} GiB"
 fi
 
 if [[ -n "$DOMAIN" ]]; then
@@ -118,7 +118,13 @@ else
 fi
 
 if command -v ss >/dev/null 2>&1; then
-  for PORT in 80 443 3000 8000 5432 54321; do
+  if ss -ltnH "( sport = :80 )" 2>/dev/null | grep -q .; then
+    warn "TCP port 80 is occupied; HTTPS will use TLS-ALPN on port 443"
+  else
+    ok "TCP port 80 is available (not required for TLS-ALPN)"
+  fi
+
+  for PORT in 443 3000 8000 5432 54321; do
     if ss -ltnH "( sport = :$PORT )" 2>/dev/null | grep -q .; then
       fail "TCP port $PORT is already listening"
     else
@@ -148,12 +154,12 @@ fi
 if command -v ufw >/dev/null 2>&1; then
   UFW_STATUS="$(ufw status 2>/dev/null | head -n 1 || true)"
   case "$UFW_STATUS" in
-    "Status: active")   warn "UFW is active; firewall rules must be reviewed before deployment" ;;
-    "Status: inactive") ok "UFW is not active" ;;
+    "Status: active")   warn "UFW is active; existing firewall settings will be left unchanged. Verify inbound TCP 443 is allowed." ;;
+    "Status: inactive") ok "UFW is inactive; installer will not enable or modify it" ;;
     *)                  warn "Could not determine UFW status" ;;
   esac
 else
-  warn "UFW is not installed; firewall setup will be handled by the installer"
+  warn "UFW is not installed; installer will not manage firewall rules. Ensure inbound TCP 443 is allowed."
 fi
 
 echo
