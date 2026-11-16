@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PageHeader, Stat } from "@/components/AppShell";
 import { useAllData } from "@/lib/data";
 import { carProfit, cashBalance } from "@/lib/finance";
@@ -68,23 +68,16 @@ function Dashboard() {
           <div className="font-bold mb-3">وضعیت خودروها</div>
           <div className="h-64" dir="ltr">
             <ResponsiveContainer>
-              <PieChart>
-                <Pie data={s.statuses} dataKey="value" nameKey="name" innerRadius={50} outerRadius={85} paddingAngle={3}>
-                  {s.statuses.map((_, i) => (
-                    <Cell key={i} fill={colors[i]} />
-                  ))}
-                </Pie>
+              <BarChart data={s.statuses} margin={{ top: 12, right: 12, left: 0, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" fontSize={12} />
+                <YAxis allowDecimals={false} fontSize={12} tickFormatter={(v) => fmt(v)} />
                 <Tooltip />
-              </PieChart>
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {s.statuses.map((_, i) => <Cell key={i} fill={colors[i]} />)}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
-          </div>
-          <div className="flex justify-center gap-4 text-xs">
-            {s.statuses.map((x, i) => (
-              <span key={x.name} className="flex items-center gap-1">
-                <span className="size-2.5 rounded-full" style={{ background: colors[i] }} />
-                {x.name} ({fmt(x.value)})
-              </span>
-            ))}
           </div>
         </div>
       </div>

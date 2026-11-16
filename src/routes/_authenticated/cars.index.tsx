@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/AppShell";
 import { useAllData, usePerms } from "@/lib/data";
@@ -24,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/cars/")({
 function Cars() {
   const { cars, expenses, isLoading } = useAllData();
   const { perms } = usePerms();
+  const queryClient = useQueryClient();
   const [q, setQ] = useState("");
   const list = cars.filter((c) =>
     `${c.brand} ${c.model} ${c.plate ?? ""}`.toLowerCase().includes(q.toLowerCase())
@@ -51,7 +52,19 @@ function Cars() {
             >
               <div className="flex justify-between items-start gap-2">
                 <div className="font-bold">{c.brand} {c.model}</div>
-                <StatusBadge status={c.status} />
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={c.status} />
+                  {perms.delete_car && <button type="button" className="rounded-md p-1 text-destructive hover:bg-destructive/10" aria-label="حذف خودرو" title="حذف خودرو" onClick={async (event) => {
+                    event.preventDefault(); event.stopPropagation();
+                    if (!window.confirm(`خودروی ${c.brand} ${c.model} حذف شود؟ این کار فقط وقتی ممکن است که وابستگی مالی نداشته باشد.`)) return;
+                    const { count, error: relationError } = await supabase.from("transactions").select("id", { count: "exact", head: true }).eq("car_id", c.id);
+                    if (relationError) { toast.error("بررسی وابستگی‌های خودرو ناموفق بود."); return; }
+                    if ((count ?? 0) > 0) { toast.error("برای حفظ سوابق مالی، خودروی دارای تراکنش حذف نمی‌شود."); return; }
+                    const { error } = await supabase.from("cars").delete().eq("id", c.id);
+                    if (error) { toast.error("حذف خودرو انجام نشد؛ ممکن است سوابق مالی وابسته داشته باشد."); return; }
+                    toast.success("خودرو حذف شد."); await queryClient.invalidateQueries({ queryKey: ["all-data"] });
+                  }}><Trash2 className="size-4" /></button>}
+                </div>
               </div>
               <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
                 <span>{c.asset_type === "hawala" ? "حواله" : "خودروی آماده"}</span>

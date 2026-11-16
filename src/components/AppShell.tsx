@@ -5,11 +5,11 @@ import { LayoutDashboard, Car, Database, Users, Wallet, FileBarChart, LogOut, Mo
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe, usePerms, type PermKey } from "@/lib/data";
-import { Button } from "@/components/ui/button";
 import { useBranding } from "@/lib/branding";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { APP_RELEASE_DATE, APP_RELEASE_DATE_LABEL, APP_VERSION } from "@/lib/app-meta";
+import { InstallAppButton } from "@/components/ProgressiveWebApp";
 
 const coreNav = [
   { to: "/dashboard", label: "داشبورد", icon: LayoutDashboard },
@@ -68,11 +68,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="app-shell relative z-[1] min-h-screen">
       <header className="app-topbar sticky top-0 z-40 h-16">
         <div className="mx-auto flex h-full items-center justify-between gap-3 px-3 sm:px-5 lg:px-7" dir="rtl">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="app-topbar-mark" aria-hidden="true"><Boxes className="size-5" /></span>
+            <span className="app-topbar-mark" aria-hidden="true">
+              {branding.logo_url ? <img src={branding.logo_url} alt="" className="size-8 rounded-lg object-contain" /> : <Boxes className="size-5" />}
+            </span>
             <div className="min-w-0">
               <div className="truncate text-sm font-extrabold sm:text-base">{branding.app_name}</div>
               <div className="hidden text-[11px] text-muted-foreground sm:block">سامانه مدیریت خودرو و امور مالی</div>
@@ -80,20 +82,21 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3" dir="ltr">
-            <div className="hidden min-w-0 items-center gap-2 md:flex" dir="rtl">
+            <Link to="/account" className="flex min-w-0 items-center gap-2 rounded-xl px-1.5 py-1 hover:bg-accent/70" dir="rtl" aria-label="حساب کاربری">
               <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                 {userName.trim().slice(0, 1) || <UserRound className="size-4" />}
               </span>
-              <div className="max-w-40">
+              <div className="hidden max-w-40 sm:block">
                 <div className="truncate text-xs font-bold">{userName}</div>
                 <div className="truncate text-[10px] text-muted-foreground">{roleLabel}</div>
               </div>
-            </div>
+            </Link>
             <div className="flex items-center gap-1.5">
               <NotificationBell />
               <ThemeToggle />
+              <InstallAppButton />
             </div>
-            <button type="button" onClick={signOut} aria-label="خروج" title="خروج" className="topbar-icon-button md:hidden">
+            <button type="button" onClick={signOut} aria-label="خروج" title="خروج" className="topbar-icon-button">
               <LogOut className="size-[18px]" />
             </button>
           </div>
@@ -115,19 +118,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <div className="mt-auto space-y-3 border-t border-sidebar-border pt-4">
-            <Link
-              to="/account"
-              className="flex items-center gap-3 rounded-xl border border-sidebar-border px-3 py-2.5 text-sm hover:bg-sidebar-accent"
-              activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground border-transparent hover:bg-sidebar-primary" }}
-            >
-              <Settings className="size-4" />
-              حساب کاربری
-            </Link>
-            <div className="truncate text-[11px] opacity-70" dir="ltr">{me?.user.email}</div>
-            <Button variant="secondary" size="sm" className="w-full" onClick={signOut}>
-              <LogOut className="size-4" /> خروج
-            </Button>
+          <div className="mt-auto border-t border-sidebar-border pt-4">
             <div className="sidebar-release-card">
               <img
                 src={branding.logo_url || "/hirbod-favicon.svg"}

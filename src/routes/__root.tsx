@@ -77,12 +77,18 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 
 import { AppearanceBootstrap } from "@/components/ThemeToggle";
 import { BrandingFavicon } from "@/components/BrandingFavicon";
+import { PrismBackdrop } from "@/components/PrismBackdrop";
+import { PwaServiceWorker } from "@/components/ProgressiveWebApp";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "theme-color", content: "#f7f4ff" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { title: "هیربد خودرو" },
     ],
     links: [
@@ -91,6 +97,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/hirbod-favicon.svg", type: "image/svg+xml" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/pwa-icon-256.png" },
       { rel: "preconnect", href: "https://cdn.jsdelivr.net" },
       { rel: "stylesheet", href: "https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css" },
     ],
@@ -130,8 +138,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <PrismBackdrop />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <PwaServiceWorker />
       <AppearanceBootstrap />
       <BrandingFavicon />
       <Toaster position="top-center" richColors />

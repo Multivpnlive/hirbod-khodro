@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, ChevronDown, Palette } from "lucide-react";
+import { Check, Palette } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import {
   DEFAULT_APPEARANCE,
   appearanceQueryKey,
@@ -61,6 +62,17 @@ export function ThemeToggle() {
   const { data } = useAppearance();
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
+  const [motionEnabled, setMotionEnabled] = useState(true);
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("hirbod-background-motion");
+    setMotionEnabled(saved !== "off");
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("prism-motion-paused", !motionEnabled);
+    window.localStorage.setItem("hirbod-background-motion", motionEnabled ? "on" : "off");
+  }, [motionEnabled]);
 
   const current = data ?? DEFAULT_APPEARANCE;
   const selectedId = selectedThemeId(current.theme_preset, current.color_mode);
@@ -106,8 +118,7 @@ export function ThemeToggle() {
           title={`پوسته فعلی: ${themeOptions.find((option) => option.id === selectedId)?.title ?? "روشن"}`}
         >
           <Palette className="size-[18px]" aria-hidden="true" />
-          <span className="hidden sm:inline">پوسته</span>
-          <ChevronDown className="size-3.5 opacity-60" aria-hidden="true" />
+          <span className="sr-only">انتخاب پوسته</span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="theme-selector-panel w-64 p-2" align="start" sideOffset={10} dir="rtl">
@@ -139,6 +150,17 @@ export function ThemeToggle() {
               </button>
             );
           })}
+        </div>
+        <div className="mt-2 flex items-center justify-between gap-3 border-t border-border px-2 pt-3">
+          <div>
+            <div className="text-sm font-semibold">پس‌زمینهٔ متحرک</div>
+            <div className="mt-0.5 text-[11px] text-muted-foreground">حرکت هاله‌ها و حلقه‌های پریزم</div>
+          </div>
+          <Switch
+            checked={motionEnabled}
+            onCheckedChange={setMotionEnabled}
+            aria-label="فعال‌کردن پس‌زمینهٔ متحرک"
+          />
         </div>
       </PopoverContent>
     </Popover>

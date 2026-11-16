@@ -3,7 +3,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { randomUUID } from "node:crypto";
 
 const BUCKET = "branding-assets";
-const MAX_LOGO_BYTES = 2 * 1024 * 1024;
+
+function publicLogoPath(path: string): string {
+  return `/storage/v1/object/public/${BUCKET}/${path.split("/").map(encodeURIComponent).join("/")}`;
+}
 
 function validateHex(value: unknown, label: string): string {
   if (typeof value !== "string" || !/^#[0-9a-f]{6}$/i.test(value)) {
@@ -41,8 +44,6 @@ export const saveAppBranding = createServerFn({ method: "POST" })
         throw new Error("آدرس وب‌سایت باید HTTP یا HTTPS باشد.");
       }
     }
-    if (logoDataUrl.length > 3_000_000) throw new Error("حجم لوگو بیش از حد مجاز است.");
-
     return {
       appName, companyName, contactPhone, contactEmail, website,
       primaryColor: validateHex(v.primaryColor, "رنگ اصلی"),
@@ -86,9 +87,7 @@ export const saveAppBranding = createServerFn({ method: "POST" })
 
       const mimeType = match[1];
       const bytes = Buffer.from(match[2], "base64");
-      if (!bytes.length || bytes.length > MAX_LOGO_BYTES) {
-        throw new Error("حجم لوگو باید حداکثر 2 مگابایت باشد.");
-      }
+      if (!bytes.length) throw new Error("فایل لوگو خالی است.");
 
       const valid =
         (mimeType === "image/png" && bytes.subarray(0, 8).toString("hex") === "89504e470d0a1a0a") ||
@@ -102,13 +101,19 @@ export const saveAppBranding = createServerFn({ method: "POST" })
       if (!bucket) {
         const { error: createBucketError } = await admin.storage.createBucket(BUCKET, {
           public: true,
-          fileSizeLimit: MAX_LOGO_BYTES,
           allowedMimeTypes: ["image/png", "image/jpeg", "image/webp"],
         });
         if (createBucketError) {
           throw new Error("ساخت فضای ذخیره‌سازی لوگو ناموفق بود.");
         }
       }
+
+      const { error: bucketUpdateError } = await admin.storage.updateBucket(BUCKET, {
+        public: true,
+        fileSizeLimit: null,
+        allowedMimeTypes: ["image/png", "image/jpeg", "image/webp"],
+      });
+      if (bucketUpdateError) throw new Error("حذف محدودیت حجم فضای لوگو ناموفق بود.");
 
       const ext = mimeType === "image/png" ? "png" : mimeType === "image/jpeg" ? "jpg" : "webp";
       const path = `logo/${randomUUID()}.${ext}`;
@@ -127,10 +132,13 @@ export const saveAppBranding = createServerFn({ method: "POST" })
 
       newlyUploadedPath = path;
       logoPath = path;
-      logoUrl = admin.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+      logoUrl = publicLogoPath(path);
     } else if (data.removeLogo) {
       logoPath = null;
       logoUrl = null;
+    } else if (logoPath) {
+      // Normalize existing records that contain a server-only localhost URL.
+      logoUrl = publicLogoPath(logoPath);
     }
 
     const payload = {
@@ -147,9 +155,11 @@ export const saveAppBranding = createServerFn({ method: "POST" })
       updated_at: new Date().toISOString(),
     };
 
-    const { error: saveError } = await admin
+    const { data: savedBranding, error: saveError } = await admin
       .from("app_branding")
-      .upsert(payload, { onConflict: "id" });
+      .upsert(payload, { onConflict: "id" })
+      .select("app_name,company_name,logo_url,primary_color,secondary_color,contact_phone,contact_email,website")
+      .single();
 
     if (saveError) {
       if (newlyUploadedPath) {
@@ -162,5 +172,7 @@ export const saveAppBranding = createServerFn({ method: "POST" })
       await admin.storage.from(BUCKET).remove([current.logo_path]);
     }
 
-    return { success: true };
+    if (!savedBranding) throw new Error("ذخیره انجام شد اما بازخوانی مشخصات برند ناموفق بود.");
+
+    return { success: true, branding: savedBranding };
   });

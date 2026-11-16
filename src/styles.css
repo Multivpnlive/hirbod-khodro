@@ -648,3 +648,230 @@ html[data-theme="light"][data-palette="warm_gray"] {
   html[data-palette="turquoise"] body { animation: none; }
   .topbar-icon-button, .theme-selector-trigger { transition: none; }
 }
+
+/* A real, shared layer keeps visible Prism motion behind every route. */
+.prism-backdrop {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  isolation: isolate;
+}
+.prism-backdrop__grid {
+  position: absolute;
+  inset: 0;
+  opacity: .24;
+  background-image:
+    linear-gradient(hsl(var(--primary) / .07) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--primary) / .07) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: linear-gradient(to bottom, #000, transparent 88%);
+}
+.prism-backdrop__glow {
+  position: absolute;
+  display: block;
+  width: min(42vw, 39rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(58px);
+  opacity: .43;
+  will-change: transform;
+  animation: prism-glow-float 17s ease-in-out infinite alternate;
+}
+.prism-backdrop__glow--purple {
+  top: -22%;
+  right: 12%;
+  background: radial-gradient(circle, hsl(var(--primary) / .85), hsl(var(--primary) / .12) 55%, transparent 72%);
+}
+.prism-backdrop__glow--pink {
+  top: 18%;
+  left: -16%;
+  opacity: .35;
+  background: radial-gradient(circle, hsl(var(--chart-4) / .82), hsl(var(--chart-4) / .1) 56%, transparent 72%);
+  animation-delay: -6s;
+  animation-duration: 21s;
+}
+.prism-backdrop__glow--cyan {
+  right: 30%;
+  bottom: -36%;
+  opacity: .34;
+  background: radial-gradient(circle, hsl(var(--chart-2) / .82), hsl(var(--chart-2) / .1) 58%, transparent 72%);
+  animation-delay: -10s;
+  animation-duration: 19s;
+}
+.prism-backdrop__orbit {
+  position: absolute;
+  top: 48%;
+  left: 54%;
+  display: block;
+  width: min(57vw, 54rem);
+  aspect-ratio: 1;
+  border: 1px solid hsl(var(--primary) / .28);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: prism-orbit-turn 38s linear infinite;
+  will-change: transform;
+}
+.prism-backdrop__orbit--two {
+  width: min(75vw, 70rem);
+  border-style: dashed;
+  border-color: hsl(var(--chart-4) / .2);
+  opacity: .74;
+  animation-direction: reverse;
+  animation-duration: 56s;
+}
+.prism-backdrop__orbit--three {
+  width: min(94vw, 88rem);
+  border-color: hsl(var(--chart-2) / .15);
+  opacity: .58;
+  animation-duration: 72s;
+}
+.prism-backdrop__node {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  display: block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: hsl(var(--chart-4));
+  box-shadow: 0 0 20px 6px hsl(var(--chart-4) / .48);
+}
+.prism-backdrop__orbit--two .prism-backdrop__node {
+  top: 64%;
+  background: hsl(var(--chart-2));
+  box-shadow: 0 0 19px 6px hsl(var(--chart-2) / .45);
+}
+.prism-backdrop__particle {
+  position: absolute;
+  bottom: -1rem;
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: hsl(var(--chart-4));
+  box-shadow: 0 0 16px 4px hsl(var(--chart-4) / .45);
+  animation: prism-particle-rise 11s linear infinite;
+}
+.prism-backdrop__particle--one { left: 14%; animation-delay: -2s; }
+.prism-backdrop__particle--two { left: 31%; width: 4px; height: 4px; animation-delay: -7s; animation-duration: 13s; }
+.prism-backdrop__particle--three { left: 57%; background: hsl(var(--chart-2)); animation-delay: -4s; animation-duration: 12s; }
+.prism-backdrop__particle--four { left: 76%; width: 5px; height: 5px; animation-delay: -9s; animation-duration: 14s; }
+.prism-backdrop__particle--five { left: 91%; background: hsl(var(--primary)); animation-delay: -5s; animation-duration: 10s; }
+html[data-theme="dark"] .prism-backdrop__glow { opacity: .58; mix-blend-mode: screen; }
+.prism-motion-paused .prism-backdrop__glow,
+.prism-motion-paused .prism-backdrop__orbit,
+.prism-motion-paused .prism-backdrop__particle {
+  animation-play-state: paused;
+}
+.hero-landing {
+  color: hsl(var(--foreground));
+  background: transparent;
+}
+html[data-palette] .hero-landing .hero-eyebrow { color: hsl(var(--muted-foreground)); }
+html[data-palette] .hero-landing .hero-title { color: hsl(var(--foreground)); }
+html[data-palette] .hero-landing .hero-accent { color: hsl(var(--primary)); }
+html[data-palette] .hero-landing .hero-copy { color: hsl(var(--muted-foreground)); }
+.public-topbar {
+  color: hsl(var(--foreground));
+  border-bottom: 1px solid hsl(var(--border) / .65);
+  background: hsl(var(--card) / .55);
+  backdrop-filter: blur(18px);
+}
+.public-hero-panel {
+  min-height: 370px;
+  display: flex;
+  align-items: center;
+  border-color: hsl(var(--border) / .82);
+  background:
+    radial-gradient(ellipse at 86% 20%, hsl(var(--chart-4) / .13), transparent 38%),
+    radial-gradient(ellipse at 12% 90%, hsl(var(--chart-2) / .12), transparent 38%),
+    hsl(var(--card) / .62);
+  box-shadow: 0 22px 65px rgba(48, 38, 91, .08);
+  backdrop-filter: blur(18px);
+}
+.public-hero-orbit {
+  position: absolute;
+  width: 34rem;
+  height: 34rem;
+  border: 1px solid hsl(var(--primary) / .18);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: prism-orbit 46s linear infinite;
+}
+.public-hero-orbit::after {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  width: .65rem;
+  height: .65rem;
+  border-radius: 50%;
+  background: hsl(var(--chart-4));
+  box-shadow: 0 0 24px 7px hsl(var(--chart-4) / .38);
+  content: "";
+}
+.public-hero-orbit-one { top: -16rem; right: 44%; }
+.public-hero-orbit-two {
+  top: -19rem;
+  right: 38%;
+  width: 41rem;
+  height: 41rem;
+  border-style: dashed;
+  opacity: .55;
+  animation-direction: reverse;
+  animation-duration: 68s;
+}
+.hero-feature-card {
+  border-color: hsl(var(--border) / .8);
+  background: hsl(var(--card) / .76);
+  color: hsl(var(--card-foreground));
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(14px);
+}
+html[data-palette] .hero-feature-icon { color: hsl(var(--primary)); }
+html[data-palette] .hero-feature-title { color: hsl(var(--foreground)); }
+html[data-palette] .hero-feature-copy { color: hsl(var(--muted-foreground)); }
+html[data-palette] .hero-landing .hero-cta {
+  border-color: hsl(var(--primary));
+  background: linear-gradient(120deg, hsl(var(--primary)), hsl(var(--chart-4)));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 10px 26px hsl(var(--primary) / .22);
+}
+.public-release-note { border-color: hsl(var(--border)); }
+.bg-hero {
+  background: linear-gradient(120deg, hsl(var(--primary)), hsl(var(--chart-2)), hsl(var(--chart-4)));
+}
+.auth-scene { position: relative; background: transparent; }
+.auth-theme-control { position: absolute; top: 1.25rem; left: 1.25rem; z-index: 2; }
+.auth-card {
+  border-color: hsl(var(--border) / .85);
+  background: hsl(var(--card) / .84);
+  box-shadow: 0 24px 75px rgba(36, 30, 71, .16);
+  backdrop-filter: blur(22px);
+}
+.auth-submit {
+  min-height: 2.75rem;
+  background: linear-gradient(120deg, hsl(var(--primary)), hsl(var(--chart-4)));
+  box-shadow: 0 9px 25px hsl(var(--primary) / .2);
+}
+body { isolation: isolate; }
+@keyframes prism-glow-float {
+  from { transform: translate3d(-24px, -10px, 0) scale(.9); }
+  to { transform: translate3d(30px, 36px, 0) scale(1.12); }
+}
+@keyframes prism-orbit-turn {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+@keyframes prism-particle-rise {
+  0% { opacity: 0; transform: translate3d(0, 0, 0) scale(.5); }
+  18% { opacity: .9; }
+  100% { opacity: 0; transform: translate3d(18px, -90vh, 0) scale(1.25); }
+}
+@media (max-width: 640px) {
+  .auth-theme-control { top: .75rem; left: .75rem; }
+  .public-hero-panel { min-height: 320px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .topbar-icon-button, .theme-selector-trigger { transition: none; }
+}

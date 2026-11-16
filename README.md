@@ -1,6 +1,6 @@
 # هیربد خودرو | Hirbod Khodro
 
-**نسخه انتشار: 1.1.7**
+**نسخه انتشار: 1.1.8**
 
 سامانه فارسی مدیریت خریدوفروش خودرو، حسابداری شرکا و مدیریت مالی کسب‌وکارهای خودرویی؛ قابل نصب روی سرور اختصاصی با Ubuntu.
 
@@ -51,6 +51,16 @@ bash <(curl -fsSL https://raw.githubusercontent.com/Multivpnlive/hirbod-khodro/m
 bash installer/update-from-github.sh --domain app.example.com --dry-run
 bash installer/update-from-github.sh --domain app.example.com --yes
 ```
+
+## نصب وب‌اپ روی دسکتاپ و موبایل
+
+برنامه روی دامنهٔ دلخواه هر نصب و از طریق HTTPS قابل نصب است. پس از باز کردن نشانی برنامه:
+
+- **رایانه (Chrome یا Edge):** دکمهٔ نصب کنار نوار بالای برنامه یا نماد نصب در نوار نشانی مرورگر را انتخاب کنید.
+- **Android (Chrome):** منوی مرورگر را باز کنید و «Install app» یا «Add to Home screen» را بزنید.
+- **iPhone و iPad (Safari):** دکمهٔ Share را بزنید، سپس «Add to Home Screen» را انتخاب کنید.
+
+نام و آیکون وب‌اپ با برند تنظیم‌شده برای همان نصب هماهنگ می‌شوند. اگر برند یا لوگو بعد از نصب عوض شد، میانبر قدیمی را حذف و وب‌اپ را دوباره نصب کنید.
 
 ## ایمیل تأیید حساب و بازیابی رمز عبور
 
@@ -104,6 +114,6 @@ bash installer/setup-email.sh --check
 
 ## انتشار
 
-نسخه فعلی: **1.1.7**
+نسخه فعلی: **1.1.8**
 
 [مشاهده نسخه‌ها در GitHub](https://github.com/Multivpnlive/hirbod-khodro/releases)

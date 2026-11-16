@@ -23,20 +23,30 @@ export const DEFAULT_BRANDING: AppBranding = {
   website: null,
 };
 
+function publicLogoPath(path: string): string {
+  return `/storage/v1/object/public/branding-assets/${path.split("/").map(encodeURIComponent).join("/")}`;
+}
+
 export function useBranding() {
   const query = useQuery({
     queryKey: ["app-branding"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("app_branding")
-        .select("app_name,company_name,logo_url,primary_color,secondary_color,contact_phone,contact_email,website")
+        .select("app_name,company_name,logo_url,logo_path,primary_color,secondary_color,contact_phone,contact_email,website")
         .eq("id", 1)
         .maybeSingle();
 
       if (error) throw error;
-      return { ...DEFAULT_BRANDING, ...(data ?? {}) } as AppBranding;
+      return {
+        ...DEFAULT_BRANDING,
+        ...(data ?? {}),
+        // Older saves stored the server-only 127.0.0.1 URL. Always render
+        // through the current installation's same-origin public storage path.
+        logo_url: data?.logo_path ? publicLogoPath(data.logo_path) : data?.logo_url ?? null,
+      } as AppBranding;
     },
-    staleTime: 30_000,
+    staleTime: 0,
     retry: 1,
   });
 

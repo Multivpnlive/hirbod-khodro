@@ -94,11 +94,15 @@ function AppearanceSettingsPage() {
         removeLogo,
       },
     }),
-    onSuccess: async () => {
-      toast.success("مشخصات مجموعه ذخیره شد.");
+    onSuccess: async (result) => {
       setLogoDataUrl(null);
       setRemoveLogo(false);
+      queryClient.setQueryData(["app-branding"], {
+        ...DEFAULT_BRANDING,
+        ...result.branding,
+      });
       await queryClient.invalidateQueries({ queryKey: ["app-branding"] });
+      toast.success("نام و نشان مجموعه ذخیره و به‌روزرسانی شد.");
     },
     onError: (error) => toast.error(
       error instanceof Error ? error.message : "ذخیره مشخصات ناموفق بود."
@@ -114,11 +118,6 @@ function AppearanceSettingsPage() {
 
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
       toast.error("فرمت مجاز لوگو PNG، JPG یا WebP است.");
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("حجم لوگو باید حداکثر 2 مگابایت باشد.");
       return;
     }
 
@@ -251,7 +250,7 @@ function AppearanceSettingsPage() {
               )}
             </div>
             <p className="text-xs leading-6 text-muted-foreground">
-              PNG، JPG یا WebP؛ حداکثر حجم 2 مگابایت.
+              فرمت‌های PNG، JPG یا WebP.
             </p>
           </div>
 

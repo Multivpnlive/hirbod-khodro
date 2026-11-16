@@ -35,6 +35,7 @@ export function useMe() {
 export type PermKey =
   | "view_all_cars"
   | "create_car"
+  | "delete_car"
   | "edit_car"
   | "add_expense"
   | "add_payment"
@@ -63,6 +64,7 @@ export const PERM_LABELS: { key: PermKey; label: string }[] = [
 const NO_PERMS: Perms = {
   view_all_cars: false,
   create_car: false,
+  delete_car: false,
   edit_car: false,
   add_expense: false,
   add_payment: false,
@@ -148,6 +150,7 @@ export function usePerms() {
           perms: {
             view_all_cars: get("cars", "can_view"),
             create_car: get("cars", "can_create"),
+            delete_car: get("cars", "can_delete"),
             edit_car: get("cars", "can_edit"),
             add_expense: get("cars", "can_create") || get("cars", "can_edit"),
             add_payment: get("transactions", "can_create"),

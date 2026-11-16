@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { useBranding } from "@/lib/branding";
 
 type ResetState = "checking" | "otp" | "ready" | "invalid";
 type ResetFlow = "invite" | "recovery";
@@ -22,6 +24,7 @@ function Reset() {
   const [verifiedUserId, setVerifiedUserId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  const { branding } = useBranding();
 
   useEffect(() => {
     let mounted = true;
@@ -164,9 +167,14 @@ function Reset() {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen grid place-items-center bg-hero p-4">
-      <div className="card-elevated w-full max-w-sm p-6 space-y-4">
+    <div dir="rtl" className="auth-scene relative z-[1] min-h-screen grid place-items-center p-4">
+      <div className="auth-theme-control"><ThemeToggle /></div>
+      <div className="auth-card card-elevated w-full max-w-md p-6 sm:p-8 space-y-5">
         <div>
+          <div className="mb-5 flex items-center gap-3">
+            <img src={branding.logo_url || "/hirbod-favicon.svg"} alt="" className="size-12 rounded-xl border border-border bg-card object-contain p-1" />
+            <div><div className="text-sm font-bold">{branding.app_name}</div><div className="mt-1 text-xs text-muted-foreground">{branding.company_name}</div></div>
+          </div>
           <div className="text-xl font-bold">
             {state === "otp" ? "تأیید کد بازیابی" : "تعیین رمز عبور"}
           </div>

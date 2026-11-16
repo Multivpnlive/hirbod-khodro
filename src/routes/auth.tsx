@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBranding } from "@/lib/branding";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -91,18 +92,22 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen grid place-items-center bg-hero p-4">
-      <form onSubmit={submit} className="card-elevated w-full max-w-sm p-6 space-y-4">
+    <div className="auth-scene relative z-[1] min-h-screen grid place-items-center p-4">
+      <div className="auth-theme-control"><ThemeToggle /></div>
+      <form onSubmit={submit} className="auth-card card-elevated w-full max-w-md p-6 sm:p-8 space-y-5">
         <div>
           <div className="flex items-center gap-3">
-            {branding.logo_url && <img src={branding.logo_url} alt={branding.company_name} className="size-12 rounded-lg border bg-white object-contain p-1" />}
+            <img src={branding.logo_url || "/hirbod-favicon.svg"} alt={branding.company_name} className="size-14 rounded-2xl border border-border bg-card object-contain p-1.5" />
             <div>
-              <div className="text-2xl font-black">{branding.app_name}</div>
+              <div className="text-xl font-black sm:text-2xl">{branding.app_name}</div>
               <div className="text-xs text-muted-foreground mt-1">{branding.company_name}</div>
             </div>
           </div>
-          <div className="text-sm text-muted-foreground mt-1">
-            {mode === "in" ? "ورود به حساب" : "بازیابی رمز عبور"}
+          <div className="mt-6">
+            <div className="text-lg font-bold">{mode === "in" ? "خوش آمدید" : "بازیابی رمز عبور"}</div>
+            <div className="mt-1 text-sm text-muted-foreground">
+              {mode === "in" ? "برای ادامه، وارد حساب کاربری خود شوید." : "نشانی ایمیل حساب خود را وارد کنید."}
+            </div>
           </div>
         </div>
         <div className="space-y-2">
@@ -115,7 +120,7 @@ function AuthPage() {
             <Input type="password" dir="ltr" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
         )}
-        <Button className="w-full" disabled={busy}>
+        <Button className="auth-submit w-full" disabled={busy}>
           {busy ? "لطفاً صبر کنید…" : mode === "in" ? "ورود" : "ارسال کد بازیابی"}
         </Button>
         <div className="flex justify-end text-sm">
