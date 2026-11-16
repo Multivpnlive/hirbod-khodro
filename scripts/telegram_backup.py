@@ -67,6 +67,79 @@ def detect_supabase_gateway():
             "Gateway میزبان از داخل کانتینر Supabase Auth شناسایی نشد."
         ) from exc
 
+def ensure_supabase_auth_host_mapping(compose_file):
+    compose_file = Path(compose_file)
+    if compose_file.is_symlink() or not compose_file.is_file():
+        raise RuntimeError("فایل Compose مربوط به Supabase معتبر نیست.")
+
+    original_stat = compose_file.stat()
+    lines = compose_file.read_text(encoding="utf-8").splitlines()
+    auth_starts = [
+        index for index, line in enumerate(lines)
+        if re.match(r"^  auth:\s*(?:#.*)?$", line)
+    ]
+    if len(auth_starts) != 1:
+        raise RuntimeError("سرویس Auth در فایل Compose به‌صورت یکتا پیدا نشد.")
+
+    start = auth_starts[0]
+    end = next(
+        (
+            index for index in range(start + 1, len(lines))
+            if re.match(r"^  [A-Za-z0-9_-]+:\s*(?:#.*)?$", lines[index])
+        ),
+        len(lines),
+    )
+    block = lines[start:end]
+    mapping = '      - "host.docker.internal:host-gateway"'
+    mapping_pattern = re.compile(
+        r'^\s*-\s*["\']?host\.docker\.internal\s*:'
+    )
+    mapping_indexes = [
+        index for index, line in enumerate(block)
+        if mapping_pattern.match(line)
+    ]
+
+    if mapping_indexes:
+        block[mapping_indexes[0]] = mapping
+        for index in reversed(mapping_indexes[1:]):
+            del block[index]
+    else:
+        extra_hosts_indexes = [
+            index for index, line in enumerate(block)
+            if re.match(r"^    extra_hosts\s*:", line)
+        ]
+        if len(extra_hosts_indexes) > 1:
+            raise RuntimeError("extra_hosts در سرویس Auth تکراری است.")
+
+        if extra_hosts_indexes:
+            index = extra_hosts_indexes[0]
+            value = block[index].split(":", 1)[1].split("#", 1)[0].strip()
+            if value and value != "[]":
+                raise RuntimeError(
+                    "قالب extra_hosts در سرویس Auth پشتیبانی نمی‌شود."
+                )
+            block[index] = "    extra_hosts:"
+            block.insert(index + 1, mapping)
+        else:
+            while block and not block[-1].strip():
+                block.pop()
+            block.extend(["    extra_hosts:", mapping])
+
+    updated = lines[:start] + block + lines[end:]
+    content = "\n".join(updated) + "\n"
+    fd, temp_name = tempfile.mkstemp(
+        prefix=compose_file.name + ".restore.",
+        dir=str(compose_file.parent),
+    )
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as temp_file:
+            temp_file.write(content)
+        os.chown(temp_name, original_stat.st_uid, original_stat.st_gid)
+        os.chmod(temp_name, original_stat.st_mode & 0o7777)
+        os.replace(temp_name, compose_file)
+    finally:
+        Path(temp_name).unlink(missing_ok=True)
+
 def write_mailer_gateway_override(gateway):
     path = Path(
         "/etc/systemd/system/hirbod-mailer.service.d/zz-hirbod-docker-gateway.conf"
@@ -1115,6 +1188,50 @@ def restore_archive_v3(archive_path, job_id):
                 st = src_item.stat()
                 os.chown(dst_item, st.st_uid, st.st_gid)
 
+    def copy_path_preserving_owner(source, target):
+        source = Path(source)
+        target = Path(target)
+
+        if source.is_symlink():
+            raise RuntimeError("مسیر سرویس ایمیل نمی‌تواند لینک باشد.")
+
+        if source.is_dir():
+            for root, dirs, files in os.walk(source, followlinks=False):
+                for name in dirs + files:
+                    if (Path(root) / name).is_symlink():
+                        raise RuntimeError(
+                            "در مسیر سرویس ایمیل لینک غیرمجاز وجود دارد."
+                        )
+
+            shutil.copytree(
+                source,
+                target,
+                dirs_exist_ok=True,
+                copy_function=shutil.copy2,
+                symlinks=False,
+            )
+
+            for root, dirs, files in os.walk(source, topdown=False, followlinks=False):
+                src_root = Path(root)
+                dst_root = target / src_root.relative_to(source)
+                for name in files:
+                    src_item = src_root / name
+                    dst_item = dst_root / name
+                    st = src_item.stat()
+                    os.chown(dst_item, st.st_uid, st.st_gid)
+                    os.chmod(dst_item, st.st_mode & 0o7777)
+
+                st = src_root.stat()
+                os.chown(dst_root, st.st_uid, st.st_gid)
+                os.chmod(dst_root, st.st_mode & 0o7777)
+        elif source.is_file():
+            shutil.copy2(source, target)
+            st = source.stat()
+            os.chown(target, st.st_uid, st.st_gid)
+            os.chmod(target, st.st_mode & 0o7777)
+        else:
+            raise RuntimeError("مسیر سرویس ایمیل فایل یا پوشه معتبری نیست.")
+
     def replace_tree(source, target):
         source = Path(source)
         target = Path(target)
@@ -1253,10 +1370,7 @@ def restore_archive_v3(archive_path, job_id):
                 continue
             destination = snapshot / "email-service" / target.relative_to("/")
             destination.parent.mkdir(parents=True, exist_ok=True)
-            if target.is_dir():
-                shutil.copytree(target, destination, dirs_exist_ok=True, symlinks=False)
-            else:
-                shutil.copy2(target, destination)
+            copy_path_preserving_owner(target, destination)
 
         email_service_state["snapshot_complete"] = True
         atomic_json(snapshot / "email-service-manifest.json", email_service_state)
@@ -1630,6 +1744,9 @@ def restore_archive_v3(archive_path, job_id):
                 timeout=2400,
             )
 
+        if email_service_restored or mailer_was_installed:
+            ensure_supabase_auth_host_mapping(project_dir / "docker-compose.yml")
+
         progress("running", "services-start", 87, "راه‌اندازی سرویس‌های Supabase")
 
         compose_command = [
@@ -1787,10 +1904,11 @@ def restore_archive_v3(archive_path, job_id):
                     if previous_email_paths.get(str(target)):
                         source = snapshot / "email-service" / target.relative_to("/")
                         target.parent.mkdir(parents=True, exist_ok=True)
-                        if source.is_dir():
-                            shutil.copytree(source, target, dirs_exist_ok=True, symlinks=False)
-                        elif source.is_file():
-                            shutil.copy2(source, target)
+                        if not source.exists():
+                            raise RuntimeError(
+                                "فایل‌های نسخه اضطراری سرویس ایمیل ناقص هستند."
+                            )
+                        copy_path_preserving_owner(source, target)
 
             saved_configs = snapshot / "config"
             if saved_configs.is_dir():
@@ -1808,6 +1926,14 @@ def restore_archive_v3(archive_path, job_id):
                 capture_output=True,
                 timeout=60,
             )
+
+            previous_mailer_paths = email_manifest.get("paths", {})
+            mailer_unit_path = "/etc/systemd/system/hirbod-mailer.service"
+            if (
+                email_manifest.get("snapshot_complete")
+                and previous_mailer_paths.get(mailer_unit_path)
+            ):
+                ensure_supabase_auth_host_mapping(project_dir / "docker-compose.yml")
 
             subprocess.run(
                 ["docker", "compose", "up", "-d"],
