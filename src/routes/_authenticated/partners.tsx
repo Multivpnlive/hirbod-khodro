@@ -76,7 +76,7 @@ function Partners() {
       <PageHeader title="شرکا" action={
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setShowInactive((v) => !v)}>
-            {showInactive ? "شرکای فعال" : `شرکای غیرفعال (${inactivePartners.length.toLocaleString("fa-IR")})`}
+            {showInactive ? "شرکای فعال" : `شرکای غیرفعال (${inactivePartners.length.toLocaleString("fa-IR-u-nu-latn")})`}
           </Button>
           {mayCreate && <AddPartner />}
         </div>
@@ -84,7 +84,7 @@ function Partners() {
 
       <div className="text-sm text-muted-foreground">
         {showInactive ? "شرکای غیرفعال" : "شرکای فعال"}:
-        {" "}{displayed.length.toLocaleString("fa-IR")}
+        {" "}{displayed.length.toLocaleString("fa-IR-u-nu-latn")}
       </div>
 
       {d.isLoading ? (
@@ -118,7 +118,7 @@ function Partners() {
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">تعداد معامله</div>
-                    {s.deals.toLocaleString("fa-IR")}
+                    {s.deals.toLocaleString("fa-IR-u-nu-latn")}
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">سهم سود/زیان</div>

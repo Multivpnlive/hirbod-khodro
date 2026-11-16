@@ -176,7 +176,7 @@ export const inviteStaffUser = createServerFn({ method: "POST" })
     const email = typeof value?.email === "string" ? value.email.trim().toLowerCase() : "";
     const fullName = typeof value?.fullName === "string" ? value.fullName.trim() : "";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("ایمیل معتبر وارد کنید.");
-    if (fullName.length < 2 || fullName.length > 120) throw new Error("نام باید بین ۲ تا ۱۲۰ نویسه باشد.");
+    if (fullName.length < 2 || fullName.length > 120) throw new Error("نام باید بین 2 تا 120 نویسه باشد.");
     return { email, fullName, staffRole: validateRole(value.staffRole) };
   })
   .handler(async ({ context, data }) => {
@@ -359,7 +359,7 @@ export const updateStaffIdentity = createServerFn({ method: "POST" })
       throw new Error("شناسه کاربر معتبر نیست.");
     }
     if (fullName.length < 2 || fullName.length > 120) {
-      throw new Error("نام باید بین ۲ تا ۱۲۰ نویسه باشد.");
+      throw new Error("نام باید بین 2 تا 120 نویسه باشد.");
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new Error("ایمیل معتبر وارد کنید.");

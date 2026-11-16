@@ -45,7 +45,7 @@ function Reports() {
         </Field>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Stat label="تعداد معاملات" value={new Intl.NumberFormat("fa-IR").format(rows.length)} />
+        <Stat label="تعداد معاملات" value={new Intl.NumberFormat("fa-IR-u-nu-latn").format(rows.length)} />
         <Stat label={pid ? "سرمایه شریک" : "سرمایه کل"} value={toman(rows.reduce((a, r) => a + r.mine, 0))} />
         <Stat label={pid ? "سهم سود/زیان شریک" : "سود/زیان"} value={toman(totalProfit)} tone={totalProfit >= 0 ? "pos" : "neg"} />
         <Stat label="خالص تراکنش‌ها" value={toman(cashBalance(txns))} />

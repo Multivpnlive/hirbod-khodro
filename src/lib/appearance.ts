@@ -14,17 +14,17 @@ export type AppearancePreference = {
 export const DEFAULT_APPEARANCE: AppearancePreference = {
   user_id: null,
   theme_preset: "turquoise",
-  color_mode: "dark",
+  color_mode: "light",
 };
 
 export const APPEARANCE_PRESETS = [
   {
     id: "turquoise" as const,
-    title: "فیروزه‌ای",
-    description: "ترکیب آشنای هیربد؛ مدرن و آرام",
-    primary: "#0e9fa3",
-    secondary: "#082f49",
-    surface: "#e6f7f6",
+    title: "پریزم روشن",
+    description: "زمینه روشن با طیف‌های رنگی لطیف و زنده",
+    primary: "#6258e8",
+    secondary: "#dce9ff",
+    surface: "#f6f7ff",
   },
   {
     id: "blue" as const,

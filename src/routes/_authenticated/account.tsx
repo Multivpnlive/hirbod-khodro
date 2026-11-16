@@ -61,7 +61,7 @@ function AccountPage() {
       return;
     }
     if (newPassword.length < 8) {
-      toast.error("رمز جدید باید حداقل ۸ نویسه داشته باشد.");
+      toast.error("رمز جدید باید حداقل 8 نویسه داشته باشد.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -99,7 +99,7 @@ function AccountPage() {
 
   const user = me.user;
   const createdAt = user.created_at
-    ? new Intl.DateTimeFormat("fa-IR", { year: "numeric", month: "long", day: "numeric" }).format(new Date(user.created_at))
+    ? new Intl.DateTimeFormat("fa-IR-u-nu-latn", { year: "numeric", month: "long", day: "numeric" }).format(new Date(user.created_at))
     : "—";
 
   return (
@@ -145,7 +145,7 @@ function AccountPage() {
           <div className="mb-5 flex items-center gap-3"><div className="grid size-10 place-items-center rounded-xl bg-accent text-accent-foreground"><LockKeyhole className="size-5" /></div><div><h2 className="font-bold">امنیت و رمز عبور</h2><p className="text-sm text-muted-foreground mt-1">برای تغییر رمز، ابتدا رمز فعلی را تأیید کنید.</p></div></div>
           <form className="space-y-4" onSubmit={changePassword}>
             <div className="space-y-2"><Label htmlFor="current-password">رمز عبور فعلی</Label><Input id="current-password" type="password" autoComplete="current-password" dir="ltr" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></div>
-            <div className="space-y-2"><Label htmlFor="new-password">رمز عبور جدید</Label><Input id="new-password" type="password" autoComplete="new-password" dir="ltr" minLength={8} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /><p className="text-xs text-muted-foreground">حداقل ۸ نویسه انتخاب کنید.</p></div>
+            <div className="space-y-2"><Label htmlFor="new-password">رمز عبور جدید</Label><Input id="new-password" type="password" autoComplete="new-password" dir="ltr" minLength={8} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /><p className="text-xs text-muted-foreground">حداقل 8 نویسه انتخاب کنید.</p></div>
             <div className="space-y-2"><Label htmlFor="confirm-password">تکرار رمز جدید</Label><Input id="confirm-password" type="password" autoComplete="new-password" dir="ltr" minLength={8} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></div>
             <Button type="submit" className="w-full" disabled={passwordBusy}><KeyRound className="size-4" />{passwordBusy ? "در حال تغییر…" : "تغییر رمز عبور"}</Button>
           </form>

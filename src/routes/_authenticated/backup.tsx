@@ -25,7 +25,7 @@ function dateText(value?: string | null) {
   if (!value) return "ثبت نشده";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("fa-IR", {
+  return new Intl.DateTimeFormat("fa-IR-u-nu-latn", {
     dateStyle: "short",
     timeStyle: "short",
   }).format(date);
@@ -198,7 +198,7 @@ function TelegramBackupPage() {
     }
 
     if (restoreFile.size > 512 * 1024 * 1024) {
-      toast.error("حجم فایل از ۵۱۲ مگابایت بیشتر است.");
+      toast.error("حجم فایل از 512 مگابایت بیشتر است.");
       return;
     }
 
@@ -376,13 +376,13 @@ function TelegramBackupPage() {
               onChange={(e) => setScheduleHours(e.target.value)}
               className="w-full rounded-md border bg-background px-3 py-2.5 text-sm"
             >
-              <option value="0.5">هر ۳۰ دقیقه</option>
-              <option value="1">هر ۱ ساعت</option>
-              <option value="2">هر ۲ ساعت</option>
-              <option value="4">هر ۴ ساعت</option>
-              <option value="6">هر ۶ ساعت</option>
-              <option value="12">هر ۱۲ ساعت</option>
-              <option value="24">هر ۲۴ ساعت</option>
+              <option value="0.5">هر 30 دقیقه</option>
+              <option value="1">هر 1 ساعت</option>
+              <option value="2">هر 2 ساعت</option>
+              <option value="4">هر 4 ساعت</option>
+              <option value="6">هر 6 ساعت</option>
+              <option value="12">هر 12 ساعت</option>
+              <option value="24">هر 24 ساعت</option>
             </select>
           </div>
         </div>
@@ -460,7 +460,7 @@ function TelegramBackupPage() {
             }}
           />
           <p className="text-xs text-muted-foreground">
-            حداکثر حجم قابل بارگذاری در این مرحله ۵۱۲ مگابایت است.
+            حداکثر حجم قابل بارگذاری در این مرحله 512 مگابایت است.
           </p>
         </div>
 

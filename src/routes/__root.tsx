@@ -75,7 +75,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { AppearanceBootstrap } from "@/components/ThemeToggle";
 import { BrandingFavicon } from "@/components/BrandingFavicon";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -103,7 +103,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="fa" dir="rtl" data-theme="dark" data-palette="turquoise">
+    <html lang="fa" dir="rtl" data-theme="light" data-palette="turquoise">
       <head>
         <HeadContent />
       </head>
@@ -132,7 +132,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
-      <ThemeToggle />
+      <AppearanceBootstrap />
       <BrandingFavicon />
       <Toaster position="top-center" richColors />
     </QueryClientProvider>

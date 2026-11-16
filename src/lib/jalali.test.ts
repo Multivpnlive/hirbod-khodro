@@ -56,11 +56,11 @@ describe("تبدیل میلادی ↔ شمسی", () => {
 });
 
 describe("قالب‌بندی و ابزارهای نمایش", () => {
-  it("نمایش کوتاه با ارقام فارسی", () => {
-    expect(formatJalaliShort("2026-10-23")).toBe("۱۴۰۵/۰۸/۰۱");
+  it("نمایش کوتاه با ارقام لاتین", () => {
+    expect(formatJalaliShort("2026-10-23")).toBe("1405/08/01");
   });
   it("برچسب ماه شمسی فارسی است", () => {
-    expect(jalaliMonthLabel(1405, 8)).toBe("آبان ۱۴۰۵");
+    expect(jalaliMonthLabel(1405, 8)).toBe("آبان 1405");
   });
   it("کلید ماه شمسی قابل مرتب‌سازی است", () => {
     expect(jalaliMonthKey("2026-10-23")).toBe("1405-08");

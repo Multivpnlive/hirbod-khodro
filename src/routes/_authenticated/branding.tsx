@@ -118,7 +118,7 @@ function AppearanceSettingsPage() {
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("حجم لوگو باید حداکثر ۲ مگابایت باشد.");
+      toast.error("حجم لوگو باید حداکثر 2 مگابایت باشد.");
       return;
     }
 
@@ -251,7 +251,7 @@ function AppearanceSettingsPage() {
               )}
             </div>
             <p className="text-xs leading-6 text-muted-foreground">
-              PNG، JPG یا WebP؛ حداکثر حجم ۲ مگابایت.
+              PNG، JPG یا WebP؛ حداکثر حجم 2 مگابایت.
             </p>
           </div>
 

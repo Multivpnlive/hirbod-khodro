@@ -25,10 +25,10 @@ export const saveAppBranding = createServerFn({ method: "POST" })
     const removeLogo = v.removeLogo === true;
 
     if (appName.length < 2 || appName.length > 80) {
-      throw new Error("نام نرم‌افزار باید بین ۲ تا ۸۰ نویسه باشد.");
+      throw new Error("نام نرم‌افزار باید بین 2 تا 80 نویسه باشد.");
     }
     if (companyName.length < 2 || companyName.length > 120) {
-      throw new Error("نام شرکت باید بین ۲ تا ۱۲۰ نویسه باشد.");
+      throw new Error("نام شرکت باید بین 2 تا 120 نویسه باشد.");
     }
     if (contactPhone.length > 40) throw new Error("شماره تماس بیش از حد طولانی است.");
     if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
@@ -87,7 +87,7 @@ export const saveAppBranding = createServerFn({ method: "POST" })
       const mimeType = match[1];
       const bytes = Buffer.from(match[2], "base64");
       if (!bytes.length || bytes.length > MAX_LOGO_BYTES) {
-        throw new Error("حجم لوگو باید حداکثر ۲ مگابایت باشد.");
+        throw new Error("حجم لوگو باید حداکثر 2 مگابایت باشد.");
       }
 
       const valid =

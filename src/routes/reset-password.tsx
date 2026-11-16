@@ -96,7 +96,7 @@ function Reset() {
       return;
     }
     if (!/^\d{6}$/.test(normalizedCode)) {
-      toast.error("کد بازیابی باید دقیقاً ۶ رقم باشد.");
+      toast.error("کد بازیابی باید دقیقاً 6 رقم باشد.");
       return;
     }
 
@@ -133,7 +133,7 @@ function Reset() {
       return;
     }
     if (password.length < 8) {
-      toast.error("رمز عبور باید حداقل ۸ نویسه داشته باشد.");
+      toast.error("رمز عبور باید حداقل 8 نویسه داشته باشد.");
       return;
     }
 
@@ -255,7 +255,7 @@ function Reset() {
                 required
               />
               <p className="text-xs text-muted-foreground">
-                حداقل ۸ نویسه انتخاب کنید.
+                حداقل 8 نویسه انتخاب کنید.
               </p>
             </div>
             <Button className="w-full" type="submit" disabled={busy}>

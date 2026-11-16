@@ -244,7 +244,7 @@ async function startRestoreJob(uploadId: string) {
 
   const inspection = await inspectWithPython(archivePath);
   if (!inspection?.valid || inspection?.format_version !== 3) {
-    throw new HttpError(422, "فقط فایل بکاپ معتبر نسخه ۳ قابل بازیابی است.");
+    throw new HttpError(422, "فقط فایل بکاپ معتبر نسخه 3 قابل بازیابی است.");
   }
 
   const jobId = randomUUID();
@@ -447,7 +447,7 @@ export const Route = createFileRoute("/api/backup/restore")({
 
               if (total > MAX_UPLOAD) {
                 await reader.cancel().catch(() => {});
-                throw new HttpError(413, "حجم فایل از ۵۱۲ مگابایت بیشتر است.");
+                throw new HttpError(413, "حجم فایل از 512 مگابایت بیشتر است.");
               }
 
               if (firstBytes.length < 2) {

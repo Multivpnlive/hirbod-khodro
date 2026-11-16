@@ -152,7 +152,7 @@ function CustomersPage() {
 
       <section className="space-y-3">
         <h2 className="font-semibold">
-          فهرست مشتریان ({customers.length.toLocaleString("fa-IR")})
+          فهرست مشتریان ({customers.length.toLocaleString("fa-IR-u-nu-latn")})
         </h2>
 
         {customers.map((c) => (

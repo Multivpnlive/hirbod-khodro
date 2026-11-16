@@ -1,12 +1,15 @@
 import { Link, Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { LayoutDashboard, Car, Database, Users, Wallet, FileBarChart, LogOut, MoreHorizontal, UserRound, ArrowLeftRight, HandCoins, X, Settings, Palette } from "lucide-react";
+import { LayoutDashboard, Car, Database, Users, Wallet, FileBarChart, LogOut, MoreHorizontal, UserRound, ArrowLeftRight, HandCoins, X, Settings, Palette, Boxes } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe, usePerms, type PermKey } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { useBranding } from "@/lib/branding";
+import { NotificationBell } from "@/components/NotificationBell";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { APP_RELEASE_DATE, APP_RELEASE_DATE_LABEL, APP_VERSION } from "@/lib/app-meta";
 
 const coreNav = [
   { to: "/dashboard", label: "داشبورد", icon: LayoutDashboard },
@@ -33,6 +36,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const userName = String(me?.user.user_metadata?.full_name ?? me?.user.email?.split("@")[0] ?? "کاربر");
+  const roleLabel = me?.isAdmin ? "مدیر اصلی" : me?.staffRole === "finance_manager" ? "مدیر مالی" : me?.staffRole === "sales" ? "فروشنده" : me?.staffRole === "limited" ? "کاربر محدود" : "شریک مالی";
   const staffFeatureNav = featureNav.filter((item) => {
     if (item.to === "/customers") return perms.view_customers;
     if (item.to === "/receivables") return perms.view_receivables;
@@ -63,53 +68,84 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen md:flex">
-      <aside className="hidden md:flex md:w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground p-5 gap-6 sticky top-0 h-screen">
-        <div className="flex items-center gap-3">
-          {branding.logo_url && <img src={branding.logo_url} alt={branding.company_name} className="size-11 rounded-lg bg-white object-contain p-1" />}
-          <div className="min-w-0">
-            <div className="text-lg font-extrabold truncate">{branding.app_name}</div>
-            <div className="text-xs opacity-70 mt-1 truncate">{branding.company_name}</div>
-            <div className="text-[11px] opacity-60 mt-1">{me?.isAdmin ? "مدیر اصلی" : me?.staffRole === "finance_manager" ? "مدیر مالی" : me?.staffRole === "sales" ? "فروشنده" : me?.staffRole === "limited" ? "کاربر محدود" : "شریک مالی"}</div>
+    <div className="min-h-screen">
+      <header className="app-topbar sticky top-0 z-40 h-16">
+        <div className="mx-auto flex h-full items-center justify-between gap-3 px-3 sm:px-5 lg:px-7" dir="rtl">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="app-topbar-mark" aria-hidden="true"><Boxes className="size-5" /></span>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-extrabold sm:text-base">{branding.app_name}</div>
+              <div className="hidden text-[11px] text-muted-foreground sm:block">سامانه مدیریت خودرو و امور مالی</div>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3" dir="ltr">
+            <div className="hidden min-w-0 items-center gap-2 md:flex" dir="rtl">
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                {userName.trim().slice(0, 1) || <UserRound className="size-4" />}
+              </span>
+              <div className="max-w-40">
+                <div className="truncate text-xs font-bold">{userName}</div>
+                <div className="truncate text-[10px] text-muted-foreground">{roleLabel}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <NotificationBell />
+              <ThemeToggle />
+            </div>
+            <button type="button" onClick={signOut} aria-label="خروج" title="خروج" className="topbar-icon-button md:hidden">
+              <LogOut className="size-[18px]" />
+            </button>
           </div>
         </div>
-        <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
-          {desktopNav.map((n) => (
-            <Link
-              key={n.to}
-              to={n.to}
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm hover:bg-sidebar-accent"
-              activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary" }}
-            >
-              <n.icon className="size-4" />
-              {n.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="mt-auto space-y-4 border-t border-sidebar-border pt-4">
-          <Link
-            to="/account"
-            className="flex items-center gap-3 rounded-lg border border-sidebar-border px-3 py-2.5 text-sm hover:bg-sidebar-accent"
-            activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground border-transparent hover:bg-sidebar-primary" }}
-          >
-            <Settings className="size-4" />
-            حساب کاربری
-          </Link>
-          <div className="text-xs opacity-70 truncate" dir="ltr">{me?.user.email}</div>
-          <Button variant="secondary" size="sm" className="w-full" onClick={signOut}>
-            <LogOut className="size-4" /> خروج
-          </Button>
-        </div>
-      </aside>
-
-      <header className="md:hidden flex items-center justify-between bg-sidebar text-sidebar-foreground px-4 py-3 sticky top-0 z-20">
-        <div className="flex items-center gap-2 font-extrabold">{branding.logo_url && <img src={branding.logo_url} alt="" className="size-8 rounded bg-white object-contain p-0.5" />}{branding.app_name}</div>
-        <button onClick={signOut} aria-label="خروج" className="rounded-lg p-2 hover:bg-sidebar-accent"><LogOut className="size-5" /></button>
       </header>
 
-      <main className="flex-1 min-w-0 p-4 md:p-8 pb-24 md:pb-8">
-        {children}
-      </main>
+      <div className="md:flex">
+        <aside className="hidden md:sticky md:top-16 md:flex md:h-[calc(100vh-4rem)] md:w-64 shrink-0 flex-col bg-sidebar text-sidebar-foreground px-4 py-5 gap-4">
+          <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+            {desktopNav.map((n) => (
+              <Link
+                key={n.to}
+                to={n.to}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors hover:bg-sidebar-accent"
+                activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary" }}
+              >
+                <n.icon className="size-4" />
+                {n.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="mt-auto space-y-3 border-t border-sidebar-border pt-4">
+            <Link
+              to="/account"
+              className="flex items-center gap-3 rounded-xl border border-sidebar-border px-3 py-2.5 text-sm hover:bg-sidebar-accent"
+              activeProps={{ className: "bg-sidebar-primary text-sidebar-primary-foreground border-transparent hover:bg-sidebar-primary" }}
+            >
+              <Settings className="size-4" />
+              حساب کاربری
+            </Link>
+            <div className="truncate text-[11px] opacity-70" dir="ltr">{me?.user.email}</div>
+            <Button variant="secondary" size="sm" className="w-full" onClick={signOut}>
+              <LogOut className="size-4" /> خروج
+            </Button>
+            <div className="sidebar-release-card">
+              <img
+                src={branding.logo_url || "/hirbod-favicon.svg"}
+                alt={`لوگوی ${branding.company_name}`}
+                className="sidebar-release-logo"
+              />
+              <div className="mt-2 text-xs font-extrabold">نسخه {APP_VERSION}</div>
+              <time className="mt-1 block text-[10px] opacity-70" dateTime={APP_RELEASE_DATE}>
+                انتشار {APP_RELEASE_DATE_LABEL}
+              </time>
+            </div>
+          </div>
+        </aside>
+
+        <main className="min-w-0 flex-1 p-4 pb-24 md:p-8 md:pb-8">
+          {children}
+        </main>
+      </div>
 
       {moreOpen && (
         <div className="md:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setMoreOpen(false)}>

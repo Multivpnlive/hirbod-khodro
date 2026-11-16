@@ -46,16 +46,16 @@ export const JALALI_MONTHS = [
   "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند",
 ] as const;
 
-const faNum = new Intl.NumberFormat("fa-IR", { useGrouping: false });
+const faNum = new Intl.NumberFormat("fa-IR-u-nu-latn", { useGrouping: false });
 
-/** نمایش کوتاه شمسی با ارقام فارسی: «۱۴۰۴/۰۷/۰۲» */
+/** نمایش کوتاه شمسی با ارقام لاتین: «1404/07/02» */
 export function formatJalaliShort(iso: string | null | undefined) {
   if (!iso) return "";
   const { jy, jm, jd } = isoToJalali(iso);
-  return `${faNum.format(jy)}/${faNum.format(jm).padStart(2, "۰")}/${faNum.format(jd).padStart(2, "۰")}`;
+  return `${faNum.format(jy)}/${faNum.format(jm).padStart(2, "0")}/${faNum.format(jd).padStart(2, "0")}`;
 }
 
-/** برچسب ماه شمسی: «آبان ۱۴۰۴» */
+/** برچسب ماه شمسی: «آبان 1404» */
 export function jalaliMonthLabel(jy: number, jm: number) {
   return `${JALALI_MONTHS[jm - 1]} ${faNum.format(jy)}`;
 }

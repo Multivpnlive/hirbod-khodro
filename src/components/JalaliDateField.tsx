@@ -65,7 +65,7 @@ export function JalaliDateField({
 
   const sel = iso ? isoToJalali(iso) : null;
   const todayJ = isoToJalali(todayIso());
-  const faDay = new Intl.NumberFormat("fa-IR", { useGrouping: false });
+  const faDay = new Intl.NumberFormat("fa-IR-u-nu-latn", { useGrouping: false });
 
   return (
     <div>

@@ -13,11 +13,11 @@ export function amountValue(value: FormDataEntryValue | null): number {
 }
 
 export function faMoney(value: unknown): string {
-  return `${Math.round(Number(value ?? 0)).toLocaleString("fa-IR")} تومان`;
+  return `${Math.round(Number(value ?? 0)).toLocaleString("fa-IR-u-nu-latn")} تومان`;
 }
 
 export function faNumber(value: unknown): string {
-  return Math.round(Number(value ?? 0)).toLocaleString("fa-IR");
+  return Math.round(Number(value ?? 0)).toLocaleString("fa-IR-u-nu-latn");
 }
 
 export function errorText(error: unknown): string {
