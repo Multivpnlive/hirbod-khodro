@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, Stat } from "@/components/AppShell";
 import { useAllData, usePerms } from "@/lib/data";
@@ -14,6 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Field, NativeSelect, num } from "@/components/form-bits";
 import { JalaliDateField } from "@/components/JalaliDateField";
 import { todayIso } from "@/lib/jalali";
+import { AmountInput } from "@/components/AmountInput";
+import { normalizeNationalId, normalizePhone } from "@/lib/feature-utils";
 
 export const Route = createFileRoute("/_authenticated/transactions")({
   head: () => ({ meta: [{ title: "تراکنش‌ها | هیربد خودرو" }] }),
@@ -23,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/transactions")({
 const db = supabase as any;
 type ExtendedTxn = {
   id: string;
-  type: "receipt" | "payment" | "expense" | "settlement";
+  type: "receipt" | "payment" | "expense" | "settlement" | "sale";
   amount: number;
   txn_date: string;
   description?: string | null;
@@ -38,11 +40,16 @@ const FUND_LABEL: Record<string, string> = { business: "کسب‌وکار", mana
 
 function Transactions() {
   const d = useAllData();
-  const { isAdmin, perms } = usePerms();
+  const { isAdmin, perms, can } = usePerms();
   const qc = useQueryClient();
   const [type, setType] = useState("");
   const txns = d.txns as ExtendedTxn[];
-  const list = txns.filter((t) => !type || t.type === type);
+  const saleRows: ExtendedTxn[] = d.cars.filter((car) => car.status === "sold" && Number(car.sale_price ?? 0) > 0).map((car) => ({
+    id: `sale:${car.id}`, type: "sale", amount: Number(car.sale_price), txn_date: car.sale_date ?? "", car_id: car.id,
+    description: null, fund: null,
+  }));
+  const list = [...txns, ...saleRows].filter((t) => !type || t.type === type)
+    .sort((a, b) => (b.txn_date || "0000").localeCompare(a.txn_date || "0000"));
   const businessTxns = txns.filter((t) => t.fund == null || t.fund === "business");
   const sum = (k: string) => businessTxns.filter((t) => t.type === k).reduce((a, t) => a + Number(t.amount), 0);
 
@@ -60,13 +67,13 @@ function Transactions() {
         <Stat label="دریافت‌های کسب‌وکار" value={toman(sum("receipt"))} tone="pos" />
         <Stat label="پرداخت‌های کسب‌وکار" value={toman(sum("payment"))} />
         <Stat label="هزینه‌های کسب‌وکار" value={toman(sum("expense"))} />
-        <Stat label="تسویه شرکا" value={toman(sum("settlement"))} />
+        <Stat label="تسویه سرمایه‌گذاران" value={toman(sum("settlement"))} />
         <Stat label="موجودی نقد کسب‌وکار" value={toman(cashBalance(businessTxns))} />
       </div>
       <div className="mb-3 max-w-48">
         <NativeSelect value={type} onChange={(e) => setType(e.target.value)}>
           <option value="">همه انواع</option>
-          {Object.entries(txnLabel).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          {Object.entries({ ...txnLabel, sale: "فروش خودرو" }).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </NativeSelect>
       </div>
       <div className="card-elevated divide-y">
@@ -77,16 +84,18 @@ function Transactions() {
             <div key={t.id} className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-bold">{txnLabel[t.type] ?? t.type}</span>
-                  <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">{FUND_LABEL[t.fund ?? "business"] ?? t.fund}</span>
+                  <span className="font-bold">{t.type === "sale" ? "فروش خودرو" : txnLabel[t.type] ?? t.type}</span>
+                  <span className="rounded-full border px-2 py-0.5 text-xs text-muted-foreground">{t.type === "sale" ? "فروش" : FUND_LABEL[t.fund ?? "business"] ?? t.fund}</span>
                 </div>
                 <div className="text-xs text-muted-foreground mt-0.5">
                   {faDate(t.txn_date)} {t.description && `· ${t.description}`} {car && `· ${car.brand} ${car.model}`} {p && `· ${p.name}`}
                 </div>
+                {t.type === "sale" && car && (isAdmin || can("cars", "edit")) && <Link to="/cars/$id" params={{ id: car.id }} className="mt-1 inline-block text-xs text-primary underline">ویرایش اطلاعات فروش</Link>}
               </div>
               <div className="flex items-center gap-3">
-                <span className={t.type === "receipt" ? "text-success font-bold" : "font-bold"}>{t.type === "receipt" ? "+" : "−"}{toman(t.amount)}</span>
-                {isAdmin && <button onClick={() => void del(t.id)} aria-label="حذف"><Trash2 className="size-4 text-muted-foreground" /></button>}
+                <span className={t.type === "receipt" ? "text-success font-bold" : "font-bold"}>{t.type === "sale" ? "" : t.type === "receipt" ? "+" : "−"}{toman(t.amount)}</span>
+                {t.type !== "sale" && (isAdmin || can("transactions", "edit")) && <EditTxn txn={t} />}
+                {t.type !== "sale" && (isAdmin || can("transactions", "delete")) && <button onClick={() => void del(t.id)} aria-label="حذف"><Trash2 className="size-4 text-muted-foreground" /></button>}
               </div>
             </div>
           );
@@ -95,6 +104,43 @@ function Transactions() {
       </div>
     </div>
   );
+}
+
+function EditTxn({ txn }: { txn: ExtendedTxn }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const qc = useQueryClient();
+
+  async function save(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const amount = num(f.get("amount"));
+    if (amount <= 0) { toast.error("مبلغ باید بیشتر از صفر باشد"); return; }
+    setBusy(true);
+    const { error } = await db.from("transactions").update({
+      amount,
+      txn_date: String(f.get("date") || txn.txn_date),
+      description: String(f.get("description") || "").trim() || null,
+    }).eq("id", txn.id);
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("تراکنش ویرایش شد");
+    await qc.invalidateQueries({ queryKey: ["all-data"] });
+    setOpen(false);
+  }
+
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild><button aria-label="ویرایش تراکنش" title="ویرایش تراکنش"><Pencil className="size-4 text-muted-foreground" /></button></DialogTrigger>
+    <DialogContent dir="rtl">
+      <DialogHeader><DialogTitle>ویرایش {txnLabel[txn.type] ?? "تراکنش"}</DialogTitle></DialogHeader>
+      <form onSubmit={(e) => void save(e)} className="space-y-3">
+        <Field label="مبلغ (تومان)"><AmountInput name="amount" defaultValue={txn.amount} required /></Field>
+        <Field label="تاریخ"><JalaliDateField name="date" defaultValue={txn.txn_date} /></Field>
+        <Field label="توضیحات"><Input name="description" defaultValue={txn.description ?? ""} /></Field>
+        <Button disabled={busy} className="w-full">{busy ? "در حال ذخیره…" : "ذخیره تغییرات"}</Button>
+      </form>
+    </DialogContent>
+  </Dialog>;
 }
 
 function AddTxn() {
@@ -130,11 +176,11 @@ function AddTxn() {
       toast.error("برای تراکنش امانی، مشتری را انتخاب یا مشخصات مشتری جدید را وارد کنید");
       return;
     }
-    if (txnType === "settlement" && chosenFund !== "business") { toast.error("تسویه شرکا فقط از صندوق کسب‌وکار مجاز است"); return; }
+    if (txnType === "settlement" && chosenFund !== "business") { toast.error("تسویه با سرمایه‌گذار فقط از صندوق کسب‌وکار مجاز است"); return; }
     setBusy(true);
 
     if (chosenFund === "custody" && !customerId && newCustomerName) {
-      const nationalId = String(f.get("new_customer_national_id") || "").trim() || null;
+      const nationalId = normalizeNationalId(String(f.get("new_customer_national_id") || "")) || null;
       if (nationalId) {
         const { data, error } = await db.from("customers").select("id")
           .eq("national_id", nationalId).eq("is_demo", false).limit(1).maybeSingle();
@@ -144,7 +190,7 @@ function AddTxn() {
       if (!customerId) {
         const { data, error } = await db.from("customers").insert({
           name: newCustomerName,
-          phone: String(f.get("new_customer_phone") || "").trim() || null,
+          phone: normalizePhone(String(f.get("new_customer_phone") || "")) || null,
           national_id: nationalId,
           notes: null,
           is_demo: false,
@@ -185,7 +231,7 @@ function AddTxn() {
               {allowedTypes.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </NativeSelect>
           </Field>
-          <Field label="مبلغ (تومان)"><Input name="amount" inputMode="numeric" required /></Field>
+          <Field label="مبلغ (تومان)"><AmountInput name="amount" required /></Field>
           <Field label="تاریخ"><JalaliDateField name="date" defaultValue={todayIso()} /></Field>
           {isAdmin && <Field label="صندوق">
             <NativeSelect name="fund" value={fund} onChange={(e) => setFund(e.target.value)}>
@@ -202,12 +248,12 @@ function AddTxn() {
               <summary className="cursor-pointer text-sm">افزودن مشتری جدید</summary>
               <div className="mt-3 grid gap-2 sm:grid-cols-3">
                 <Field label="نام مشتری"><Input name="new_customer_name" /></Field>
-                <Field label="تلفن"><Input name="new_customer_phone" inputMode="tel" /></Field>
-                <Field label="کد ملی"><Input name="new_customer_national_id" inputMode="numeric" /></Field>
+                <Field label="تلفن"><Input name="new_customer_phone" inputMode="tel" dir="ltr" /></Field>
+                <Field label="کد ملی"><Input name="new_customer_national_id" inputMode="numeric" dir="ltr" /></Field>
               </div>
             </details>
           </div>}
-          <Field label="شریک (اختیاری)">
+          <Field label="مشتری سرمایه‌گذار (اختیاری)">
             <NativeSelect name="partner"><option value="">—</option>{d.partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</NativeSelect>
           </Field>
           <div className="col-span-2"><Field label="خودرو (اختیاری)">

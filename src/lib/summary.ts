@@ -1,4 +1,4 @@
-import type { Car, Expense, Investment, Txn } from "@/lib/data";
+import type { Car, Expense, Investment, Partner, Txn } from "@/lib/data";
 import { carPartnerLedger } from "@/lib/finance";
 
 export function partnerSummary(
@@ -39,5 +39,53 @@ export function partnerSummary(
     settled,
     due,
     deals: mine.length,
+  };
+}
+
+/**
+ * Financial overview for a customer profile linked to one or more legacy partner rows.
+ * The full settlement amount is deducted from invested principal. Realized
+ * profit/loss remains visible separately and does not change this capital balance.
+ */
+export function customerInvestorSummary(
+  customerId: string,
+  d: {
+    partners: Array<Pick<Partner, "id"> & { customer_id?: string | null }>;
+    cars: Car[];
+    expenses: Expense[];
+    investments: Investment[];
+    txns: Txn[];
+  },
+) {
+  const partnerIds = new Set(d.partners.filter((partner) => partner.customer_id === customerId).map((partner) => partner.id));
+  const investments = d.investments.filter((investment) => partnerIds.has(investment.partner_id));
+  const investmentTotal = investments.reduce((sum, investment) => sum + Number(investment.amount), 0);
+  const carById = new Map(d.cars.map((car) => [car.id, car]));
+  let currentCapital = 0;
+  let profit = 0;
+  let due = 0;
+
+  for (const investment of investments) {
+    const car = carById.get(investment.car_id);
+    const principal = Number(investment.amount);
+    if (!car || car.status !== "sold") {
+      currentCapital += principal;
+      continue;
+    }
+
+    const ledgerEntry = carPartnerLedger(car, d.expenses, d.investments, d.txns)
+      .find((entry) => entry.partner_id === investment.partner_id);
+    if (!ledgerEntry) continue;
+    profit += ledgerEntry.profit;
+    due += ledgerEntry.due;
+    currentCapital += Math.max(0, principal - ledgerEntry.settled);
+  }
+
+  return {
+    investmentTotal,
+    currentCapital,
+    deals: new Set(investments.map((investment) => investment.car_id)).size,
+    profit,
+    due,
   };
 }

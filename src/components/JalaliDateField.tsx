@@ -74,7 +74,7 @@ export function JalaliDateField({
         <PopoverTrigger asChild>
           <Button type="button" variant="outline" className="h-9 w-full justify-start gap-2 font-normal">
             <CalendarDays className="size-4 shrink-0 text-muted-foreground" />
-            <span className={cn("truncate", !iso && "text-muted-foreground")}>
+            <span dir="ltr" className={cn("truncate tabular-nums", !iso && "text-muted-foreground")}>
               {iso ? formatJalaliShort(iso) : placeholder}
             </span>
           </Button>

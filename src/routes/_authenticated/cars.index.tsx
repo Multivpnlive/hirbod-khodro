@@ -7,17 +7,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/AppShell";
 import { useAllData, usePerms } from "@/lib/data";
 import { carCost, carProfit } from "@/lib/finance";
+import { customerInvestorSummary } from "@/lib/summary";
 import { faYear, toman } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AmountInput } from "@/components/AmountInput";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Field, NativeSelect, StatusBadge, num } from "@/components/form-bits";
 import { FundingEditor, type ExpRow, type InvRow } from "@/components/FundingEditor";
 import { JalaliDateField } from "@/components/JalaliDateField";
 import { todayIso } from "@/lib/jalali";
+import { CUSTOM_CATALOG_VALUE, VEHICLE_CATALOG } from "@/lib/iranian-vehicle-catalog";
 
 export const Route = createFileRoute("/_authenticated/cars/")({
-  head: () => ({ meta: [{ title: "دارایی‌ها | هیربد خودرو" }] }),
+  head: () => ({ meta: [{ title: "خودروها | هیربد خودرو" }] }),
   component: Cars,
 });
 
@@ -32,7 +35,7 @@ function Cars() {
 
   return (
     <div>
-      <PageHeader title="دارایی‌ها" action={perms.create_car ? <AddAsset /> : undefined} />
+      <PageHeader title="خودروها" action={perms.create_car ? <AddAsset /> : undefined} />
       <Input
         placeholder="جستجو در برند، مدل یا پلاک…"
         value={q}
@@ -67,7 +70,7 @@ function Cars() {
                 </div>
               </div>
               <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                <span>{c.asset_type === "hawala" ? "حواله" : "خودروی آماده"}</span>
+                <span>نوع معامله: {c.asset_type === "hawala" ? "حواله خودرو" : "خودروی آماده"}</span>
                 <span>·</span>
                 <span>{c.ownership_type === "shared" ? "شراکتی" : "شخصی"}</span>
                 <span>·</span>
@@ -91,7 +94,7 @@ function Cars() {
         })}
       </div>
       {!isLoading && list.length === 0 &&
-        <div className="text-muted-foreground">دارایی‌ای ثبت نشده است.</div>}
+        <div className="text-muted-foreground">خودرویی ثبت نشده است.</div>}
     </div>
   );
 }
@@ -99,7 +102,12 @@ function Cars() {
 function AddAsset() {
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
-  const { partners } = useAllData();
+  const d = useAllData();
+  const customers = d.customers.filter((customer) => !customer.is_demo);
+  const currentCapital = Object.fromEntries(customers.map((customer) => [
+    customer.id,
+    customerInvestorSummary(customer.id, { ...d, partners: d.partners as Array<any> }).currentCapital,
+  ]));
 
   const [assetType, setAssetType] = useState<"hawala" | "car">("car");
   const [ownershipType, setOwnershipType] = useState<"personal" | "shared">("personal");
@@ -108,6 +116,13 @@ function AddAsset() {
   const [purchase, setPurchase] = useState(0);
   const [factoryPrice, setFactoryPrice] = useState(0);
   const [premiumPrice, setPremiumPrice] = useState(0);
+  const [manufacturer, setManufacturer] = useState("");
+  const [model, setModel] = useState("");
+
+  const manufacturers = Object.keys(VEHICLE_CATALOG);
+  const models = manufacturer && manufacturer !== CUSTOM_CATALOG_VALUE
+    ? VEHICLE_CATALOG[manufacturer as keyof typeof VEHICLE_CATALOG]
+    : [];
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -133,25 +148,44 @@ function AddAsset() {
       return;
     }
 
-    const invRows = ownershipType === "shared"
-      ? invs.filter((r) => r.partner_id && num(r.amount) > 0)
-          .map((r) => ({ car_id: "", partner_id: r.partner_id, amount: num(r.amount) }))
-      : [];
+    const status = assetType === "car" ? String(f.get("status") || "available") : "available";
+    const salePrice = status === "sold" ? num(f.get("sale_price")) : 0;
+    const saleDate = status === "sold" ? String(f.get("sale_date") || "") : "";
+    if (status === "sold" && salePrice <= 0) { toast.error("برای ثبت فروش، مبلغ فروش معتبر وارد کنید."); return; }
+    if (status === "sold" && !saleDate) { toast.error("برای ثبت فروش، تاریخ فروش را انتخاب کنید."); return; }
+
+    const invRows = invs.filter((r) => r.customer_id && num(r.amount) > 0)
+      .map((r) => ({ customer_id: r.customer_id, amount: num(r.amount) }));
 
     if (ownershipType === "shared" && invRows.length === 0) {
-      toast.error("برای مالکیت شراکتی، حداقل یک شریک و مبلغ سرمایه لازم است.");
+      toast.error("برای مالکیت شراکتی، حداقل یک مشتری سرمایه‌گذار و مبلغ سرمایه لازم است.");
       return;
     }
 
-    const duplicatePartners = new Set(invRows.map((r) => r.partner_id)).size !== invRows.length;
-    if (duplicatePartners) {
-      toast.error("هر شریک فقط یک‌بار باید در فهرست سرمایه‌گذاران ثبت شود.");
+    const duplicateCustomers = new Set(invRows.map((r) => r.customer_id)).size !== invRows.length;
+    if (duplicateCustomers) {
+      toast.error("هر مشتری سرمایه‌گذار فقط یک‌بار باید در فهرست ثبت شود.");
       return;
+    }
+
+    const resolvedInvRows: Array<{ partner_id: string; amount: number }> = [];
+    for (const row of invRows) {
+      const customer = customers.find((item) => item.id === row.customer_id);
+      if (!customer) { toast.error("مشتری انتخاب‌شده پیدا نشد؛ فهرست را تازه کنید."); return; }
+      let partnerId = (d.partners as Array<any>).find((partner) => partner.customer_id === customer.id)?.id as string | undefined;
+      if (!partnerId) {
+        const { data, error } = await (supabase as any).from("partners")
+          .insert({ customer_id: customer.id, name: customer.name, phone: customer.phone, is_demo: false })
+          .select("id").single();
+        if (error || !data) { toast.error(error?.message ?? "پروندهٔ سرمایه‌گذاری مشتری ایجاد نشد."); return; }
+        partnerId = data.id as string;
+      }
+      resolvedInvRows.push({ partner_id: partnerId, amount: row.amount });
     }
 
     const { data: newAsset, error } = await supabase.from("cars").insert({
-      brand: String(f.get("brand") ?? "").trim(),
-      model: String(f.get("model") ?? "").trim(),
+      brand: (manufacturer === CUSTOM_CATALOG_VALUE ? String(f.get("custom_brand") ?? "") : manufacturer).trim(),
+      model: (model === CUSTOM_CATALOG_VALUE ? String(f.get("custom_model") ?? "") : model).trim(),
       year: num(f.get("year")) || null,
       color: String(f.get("color") ?? "").trim() || null,
       plate: assetType === "car" ? String(f.get("plate") ?? "").trim() || null : null,
@@ -162,20 +196,22 @@ function AddAsset() {
       purchase_price: purchasePrice,
       purchase_date: String(f.get("purchase_date") || todayIso()),
       delivery_date: null,
-      sale_price: null,
-      sale_date: null,
-      status: "available",
+      sale_price: salePrice || null,
+      sale_date: saleDate || null,
+      buyer_customer_id: String(f.get("buyer_customer_id") || "") || null,
+      status,
       is_demo: false,
     }).select("id").single();
 
     if (error || !newAsset) {
-      toast.error(error?.message ?? "ثبت دارایی انجام نشد.");
+      toast.error(error?.message ?? "ثبت خودرو انجام نشد.");
       return;
     }
 
-    const finalInvRows = invRows.map((r) => ({
+    const finalInvRows = resolvedInvRows.map((r) => ({
       ...r,
       car_id: newAsset.id,
+      is_demo: false,
     }));
 
     const expRows = exps
@@ -213,7 +249,7 @@ function AddAsset() {
       return;
     }
 
-    toast.success(assetType === "hawala" ? "حواله در پرونده دارایی ثبت شد." : "خودرو ثبت شد.");
+    toast.success(assetType === "hawala" ? "حواله در پرونده خودرو ثبت شد." : "خودرو ثبت شد.");
     form.reset();
     setInvs([]);
     setExps([]);
@@ -222,6 +258,8 @@ function AddAsset() {
     setPurchase(0);
     setAssetType("car");
     setOwnershipType("personal");
+    setManufacturer("");
+    setModel("");
     qc.invalidateQueries({ queryKey: ["all-data"] });
     setOpen(false);
   }
@@ -229,13 +267,13 @@ function AddAsset() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button><Plus className="size-4" /> دارایی جدید</Button>
+        <Button><Plus className="size-4" /> خودروی جدید</Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto" dir="rtl">
-        <DialogHeader><DialogTitle>ثبت دارایی</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>ثبت خودرو یا حواله</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="grid grid-cols-2 gap-3">
           <div className="col-span-2">
-            <Field label="نوع دارایی">
+            <Field label="نوع معامله">
               <NativeSelect
                 value={assetType}
                 onChange={(e) => setAssetType(e.target.value as "hawala" | "car")}
@@ -253,7 +291,6 @@ function AddAsset() {
                 onChange={(e) => {
                   const value = e.target.value as "personal" | "shared";
                   setOwnershipType(value);
-                  if (value === "personal") setInvs([]);
                 }}
               >
                 <option value="personal">شخصی</option>
@@ -263,10 +300,20 @@ function AddAsset() {
           </div>
 
           <Field label="برند / سازنده">
-            <Input name="brand" required />
+            <NativeSelect name="manufacturer" value={manufacturer} required onChange={(e) => { setManufacturer(e.target.value); setModel(""); }}>
+              <option value="">انتخاب سازنده</option>
+              {manufacturers.map((name) => <option key={name} value={name}>{name}</option>)}
+              <option value={CUSTOM_CATALOG_VALUE}>سازنده در فهرست نیست؛ ورود دستی</option>
+            </NativeSelect>
+            {manufacturer === CUSTOM_CATALOG_VALUE && <Input name="custom_brand" className="mt-2" placeholder="نام سازنده را وارد کنید" required />}
           </Field>
-          <Field label="مدل">
-            <Input name="model" required />
+          <Field label="مدل خودرو">
+            <NativeSelect name="model_choice" value={model} required disabled={!manufacturer} onChange={(e) => setModel(e.target.value)}>
+              <option value="">{manufacturer ? "انتخاب مدل" : "ابتدا سازنده را انتخاب کنید"}</option>
+              {models.map((name) => <option key={name} value={name}>{name}</option>)}
+              <option value={CUSTOM_CATALOG_VALUE}>مدل در فهرست نیست؛ ورود دستی</option>
+            </NativeSelect>
+            {model === CUSTOM_CATALOG_VALUE && <Input name="custom_model" className="mt-2" placeholder="نام مدل را وارد کنید" required />}
           </Field>
 
           <Field label="سال ساخت">
@@ -287,24 +334,22 @@ function AddAsset() {
           {assetType === "hawala" ? (
             <>
               <Field label="قیمت کارخانه (تومان)">
-                <Input
+                <AmountInput
                   name="factory_price"
-                  inputMode="numeric"
                   required
-                  onChange={(e) => {
-                    const value = num(e.target.value);
+                  onValueChange={(raw) => {
+                    const value = num(raw);
                     setFactoryPrice(value);
                     setPurchase(value + premiumPrice);
                   }}
                 />
               </Field>
               <Field label="مبلغ امتیاز حواله (تومان)">
-                <Input
+                <AmountInput
                   name="premium_price"
-                  inputMode="numeric"
                   required
-                  onChange={(e) => {
-                    const value = num(e.target.value);
+                  onValueChange={(raw) => {
+                    const value = num(raw);
                     setPremiumPrice(value);
                     setPurchase(factoryPrice + value);
                   }}
@@ -319,11 +364,10 @@ function AddAsset() {
             </>
           ) : (
             <Field label="قیمت خرید خودرو (تومان)">
-              <Input
+              <AmountInput
                 name="purchase_price"
-                inputMode="numeric"
                 required
-                onChange={(e) => setPurchase(num(e.target.value))}
+                onValueChange={(raw) => setPurchase(num(raw))}
               />
             </Field>
           )}
@@ -335,7 +379,7 @@ function AddAsset() {
           {assetType === "car" && (
             <>
               <Field label="قیمت فروش (تومان)">
-                <Input name="sale_price" inputMode="numeric" />
+                <AmountInput name="sale_price" />
               </Field>
               <Field label="تاریخ فروش">
                 <JalaliDateField name="sale_date" />
@@ -352,17 +396,26 @@ function AddAsset() {
             </>
           )}
 
+          <div className="col-span-2">
+            <Field label="مشتری مرتبط با خودرو یا حواله">
+              <NativeSelect name="buyer_customer_id" defaultValue="">
+                <option value="">انتخاب مشتری (اختیاری)</option>
+                {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
+              </NativeSelect>
+            </Field>
+          </div>
+
           <FundingEditor
-            partners={partners.filter((p) => !p.is_demo)}
+            customers={customers}
+            currentCapital={currentCapital}
             invs={invs}
             setInvs={setInvs}
             exps={exps}
             setExps={setExps}
             purchase={purchase}
-            allowInvestments={ownershipType === "shared"}
           />
 
-          <Button className="col-span-2">ذخیره دارایی</Button>
+          <Button className="col-span-2">ذخیره خودرو</Button>
         </form>
       </DialogContent>
     </Dialog>

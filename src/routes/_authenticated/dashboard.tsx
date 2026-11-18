@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PageHeader, Stat } from "@/components/AppShell";
 import { useAllData } from "@/lib/data";
-import { carProfit, cashBalance } from "@/lib/finance";
+import { carProfit } from "@/lib/finance";
+import { businessCashBalance } from "@/lib/extended-finance";
+import { supabase } from "@/integrations/supabase/client";
 import { fmt, toman, statusLabel } from "@/lib/format";
 import { jalaliMonthKey, jalaliMonthLabel } from "@/lib/jalali";
 
@@ -14,10 +16,19 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const { cars, expenses, investments, txns, isLoading } = useAllData();
+  const [transfers, setTransfers] = useState<Array<{ amount: number; target: string; is_demo: boolean }>>([]);
+
+  useEffect(() => {
+    let active = true;
+    void supabase.from("fund_transfers").select("amount,target,is_demo").then(({ data, error }) => {
+      if (active && !error) setTransfers(data ?? []);
+    });
+    return () => { active = false; };
+  }, []);
 
   const s = useMemo(() => {
     const capital = investments.reduce((a, i) => a + Number(i.amount), 0);
-    const tradeValue = cars.reduce((a, c) => a + Number(c.purchase_price) + (c.status === "sold" ? Number(c.sale_price ?? 0) : 0), 0);
+    const tradeValue = cars.reduce((a, c) => a + (c.status === "sold" ? Number(c.sale_price ?? 0) : Number(c.purchase_price ?? 0)), 0);
     const profits = cars.map((c) => ({ c, p: carProfit(c, expenses) })).filter((x) => x.p !== null) as { c: (typeof cars)[0]; p: number }[];
     const profit = profits.reduce((a, x) => a + x.p, 0);
     const byMonth = new Map<string, number>();
@@ -30,8 +41,8 @@ function Dashboard() {
       return { m: jalaliMonthLabel(jy!, jm!), v };
     });
     const statuses = (["available", "reserved", "sold"] as const).map((st) => ({ name: statusLabel[st], value: cars.filter((c) => c.status === st).length }));
-    return { capital, tradeValue, profit, cash: cashBalance(txns), monthly, statuses, profits };
-  }, [cars, expenses, investments, txns]);
+    return { capital, tradeValue, profit, cash: businessCashBalance(txns, transfers), monthly, statuses, profits };
+  }, [cars, expenses, investments, txns, transfers]);
 
   if (isLoading) return <div className="text-muted-foreground">در حال بارگذاری…</div>;
   const colors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-5))"];
@@ -40,10 +51,10 @@ function Dashboard() {
     <div>
       <PageHeader title="داشبورد مدیریتی" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Stat label="مجموع سرمایه شرکا" value={toman(s.capital)} />
+        <Stat label="مجموع سرمایه مشتریان" value={toman(s.capital)} />
         <Stat label="ارزش معاملات" value={toman(s.tradeValue)} />
         <Stat label="سود و زیان خالص" value={toman(s.profit)} tone={s.profit >= 0 ? "pos" : "neg"} />
-        <Stat label="موجودی نقدی" value={toman(s.cash)} tone={s.cash >= 0 ? undefined : "neg"} />
+        <Stat label="موجودی نقدی کسب‌وکار" value={toman(s.cash)} tone={s.cash >= 0 ? undefined : "neg"} />
       </div>
       <div className="grid lg:grid-cols-3 gap-4 mt-6">
         <div className="card-elevated p-4 lg:col-span-2">

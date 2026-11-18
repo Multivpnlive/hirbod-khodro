@@ -7,12 +7,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Stat } from "@/components/AppShell";
 import { useAllData, usePerms } from "@/lib/data";
 import { carCost, carExpensesTotal, carPartnerLedger, carProfit } from "@/lib/finance";
+import { customerInvestorSummary } from "@/lib/summary";
 import { faDate, faYear, pct, toman, txnLabel } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AmountInput } from "@/components/AmountInput";
 import { Field, NativeSelect, StatusBadge, num } from "@/components/form-bits";
 import { JalaliDateField } from "@/components/JalaliDateField";
 import { todayIso } from "@/lib/jalali";
+import { normalizeNationalId, normalizePhone } from "@/lib/feature-utils";
 
 export const Route = createFileRoute("/_authenticated/cars/$id")({
   head: () => ({ meta: [{ title: "جزئیات خودرو | هیربد خودرو" }] }),
@@ -28,7 +31,28 @@ function CarDetail() {
   const mayViewCustomers = isAdmin || can("customers", "view");
   const mayCreateCustomers = isAdmin || can("customers", "create");
   const [customers, setCustomers] = useState<Array<{ id: string; name: string; national_id: string | null }>>([]);
+  const car = d.data?.cars.find((c) => c.id === id);
+  const [receivable, setReceivable] = useState<{ received: number; adjusted: number; outstanding: number } | null>(null);
   const refresh = () => qc.invalidateQueries({ queryKey: ["all-data"] });
+
+  useEffect(() => {
+    let active = true;
+    if (!car || car.status !== "sold") {
+      setReceivable(null);
+      return () => { active = false; };
+    }
+    void supabase.from("car_receivables").select("received,adjusted,outstanding").eq("car_id", id).maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          setReceivable(null);
+          toast.error(`وضعیت وصول: ${error.message}`);
+        } else if (data) {
+          setReceivable({ received: Number(data.received ?? 0), adjusted: Number(data.adjusted ?? 0), outstanding: Number(data.outstanding ?? 0) });
+        } else setReceivable({ received: 0, adjusted: 0, outstanding: Number(car.sale_price ?? 0) });
+      });
+    return () => { active = false; };
+  }, [id, car?.status, car?.sale_price]);
 
   useEffect(() => {
     if (!mayViewCustomers) return;
@@ -43,7 +67,6 @@ function CarDetail() {
     return () => { active = false; };
   }, [mayViewCustomers]);
 
-  const car = d.data?.cars.find((c) => c.id === id);
   if (d.isLoading) return <div className="text-muted-foreground">در حال بارگذاری…</div>;
   if (!car) return <div>خودرو پیدا نشد.</div>;
 
@@ -67,6 +90,9 @@ function CarDetail() {
     const f = new FormData(e.currentTarget);
     const sale = num(f.get("sale_price"));
     const status = f.get("status") as "available" | "reserved" | "sold";
+    const saleDate = String(f.get("sale_date") || "");
+    if (status === "sold" && sale <= 0) { toast.error("برای ثبت فروش، مبلغ فروش معتبر وارد کنید."); return; }
+    if (status === "sold" && !saleDate) { toast.error("برای ثبت فروش، تاریخ فروش را انتخاب کنید."); return; }
     let buyerId = String(f.get("buyer_customer_id") || "") || null;
     const newName = String(f.get("new_customer_name") || "").trim();
 
@@ -75,7 +101,7 @@ function CarDetail() {
         toast.error("مجوز افزودن مشتری را ندارید");
         return;
       }
-      const nationalId = String(f.get("new_customer_national_id") || "").trim() || null;
+      const nationalId = normalizeNationalId(String(f.get("new_customer_national_id") || "")) || null;
       if (nationalId) {
         const { data, error } = await supabase.from("customers").select("id")
           .eq("national_id", nationalId).eq("is_demo", false).limit(1).maybeSingle();
@@ -85,7 +111,7 @@ function CarDetail() {
       if (!buyerId) {
         const { data, error } = await supabase.from("customers").insert({
           name: newName,
-          phone: String(f.get("new_customer_phone") || "").trim() || null,
+          phone: normalizePhone(String(f.get("new_customer_phone") || "")) || null,
           national_id: nationalId,
           notes: null,
           is_demo: false,
@@ -98,16 +124,17 @@ function CarDetail() {
 
     const changes: any = {
       status,
-      sale_price: sale || null,
-      sale_date: (f.get("sale_date") as string) || null,
+      sale_price: status === "sold" ? sale : null,
+      sale_date: status === "sold" ? saleDate : null,
       purchase_price: num(f.get("purchase_price")),
     };
-    if (mayViewCustomers) changes.buyer_customer_id = status === "sold" ? buyerId : null;
+    if (mayViewCustomers) changes.buyer_customer_id = buyerId;
 
-    await run(
-      supabase.from("cars").update(changes).eq("id", id),
-      "معامله به‌روزرسانی شد",
-    );
+    const { data, error } = await supabase.from("cars").update(changes).eq("id", id).select("id").maybeSingle();
+    if (error) { toast.error(error.message); return; }
+    if (!data) { toast.error("تغییری ذخیره نشد؛ مجوز ویرایش خودرو را بررسی کنید."); return; }
+    toast.success("معامله و مشتری خودرو ذخیره شد.");
+    refresh();
   }
 
   async function deliverHawala(e: React.FormEvent<HTMLFormElement>) {
@@ -124,11 +151,24 @@ function CarDetail() {
     }).eq("id", id).eq("asset_type", "hawala").select("id").maybeSingle();
 
     if (error || !data) {
-      toast.error(error?.message ?? "تبدیل انجام نشد؛ وضعیت دارایی را دوباره بررسی کنید.");
+      toast.error(error?.message ?? "تبدیل انجام نشد؛ وضعیت پرونده را دوباره بررسی کنید.");
       return;
     }
 
     toast.success("همان پرونده از حواله به خودروی آماده تبدیل شد.");
+    refresh();
+  }
+
+  async function saveHawalaCustomer(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!mayViewCustomers || !perms.edit_car) return;
+    const f = new FormData(e.currentTarget);
+    const customerId = String(f.get("customer_id") || "") || null;
+    const { data, error } = await supabase.from("cars").update({ buyer_customer_id: customerId })
+      .eq("id", id).eq("asset_type", "hawala").select("id").maybeSingle();
+    if (error) { toast.error(error.message); return; }
+    if (!data) { toast.error("مشتری حواله ذخیره نشد؛ مجوز ویرایش را بررسی کنید."); return; }
+    toast.success("مشتری مرتبط با حواله ذخیره شد.");
     refresh();
   }
 
@@ -147,23 +187,34 @@ function CarDetail() {
     e.preventDefault();
     const form = e.currentTarget;
     const f = new FormData(form);
-    if (!f.get("partner")) { toast.error("لطفاً شریک را انتخاب کنید"); return; }
+    const customerId = String(f.get("customer") || "");
+    const customer = d.customers.find((item) => item.id === customerId);
+    if (!customer) { toast.error("لطفاً مشتری سرمایه‌گذار را انتخاب کنید"); return; }
     if (num(f.get("amount")) <= 0) { toast.error("مبلغ سرمایه معتبر نیست"); return; }
-    await run(
-      supabase.from("car_investments").upsert(
-        { car_id: id, partner_id: String(f.get("partner")), amount: num(f.get("amount")), is_demo: car!.is_demo },
-        { onConflict: "car_id,partner_id" },
-      ),
-      "سرمایه شریک ثبت شد",
-    );
+    let partnerId = (d.partners as Array<any>).find((partner) => partner.customer_id === customer.id)?.id as string | undefined;
+    if (!partnerId) {
+      const { data, error } = await (supabase as any).from("partners")
+        .insert({ customer_id: customer.id, name: customer.name, phone: customer.phone, is_demo: false })
+        .select("id").single();
+      if (error || !data) { toast.error(error?.message ?? "پروندهٔ سرمایه‌گذاری مشتری ایجاد نشد."); return; }
+      partnerId = data.id as string;
+    }
+    const { data, error } = await supabase.from("car_investments").upsert(
+      { car_id: id, partner_id: partnerId, amount: num(f.get("amount")), is_demo: car!.is_demo },
+      { onConflict: "car_id,partner_id" },
+    ).select("id").single();
+    if (error) { toast.error(error.message); return; }
+    if (!data) { toast.error("سرمایهٔ مشتری ذخیره نشد؛ مجوز ویرایش را بررسی کنید."); return; }
+    toast.success("سرمایهٔ مشتری به پرونده پیوند خورد.");
     form.reset();
+    refresh();
   }
 
   async function addSettlement(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const f = new FormData(form);
-    if (!f.get("partner")) { toast.error("لطفاً شریک را انتخاب کنید"); return; }
+    if (!f.get("partner")) { toast.error("لطفاً مشتری سرمایه‌گذار را انتخاب کنید"); return; }
     if (num(f.get("amount")) <= 0) { toast.error("مبلغ پرداخت معتبر نیست"); return; }
     await run(
       supabase.from("transactions").insert({
@@ -194,7 +245,7 @@ function CarDetail() {
 
   return (
     <div className="space-y-6">
-      <Link to="/cars" className="inline-flex items-center gap-1 text-sm text-muted-foreground"><ArrowRight className="size-4" /> دارایی‌ها</Link>
+      <Link to="/cars" className="inline-flex items-center gap-1 text-sm text-muted-foreground"><ArrowRight className="size-4" /> خودروها</Link>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold">{car.brand} {car.model}</h1>
@@ -206,7 +257,7 @@ function CarDetail() {
       </div>
 
       <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-        <span>نوع دارایی: {car.asset_type === "hawala" ? "حواله" : "خودروی آماده"}</span>
+        <span>نوع معامله: {car.asset_type === "hawala" ? "حواله خودرو" : "خودروی آماده"}</span>
         <span>·</span>
         <span>نوع مالکیت: {car.ownership_type === "shared" ? "شراکتی" : "شخصی"}</span>
         {car.delivery_date && <><span>·</span><span>تاریخ تحویل: {faDate(car.delivery_date)}</span></>}
@@ -241,6 +292,18 @@ function CarDetail() {
         </form>
       )}
 
+      {car.asset_type === "hawala" && perms.edit_car && mayViewCustomers && (
+        <form onSubmit={saveHawalaCustomer} className="card-elevated grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 p-4 items-end">
+          <Field label="مشتری مرتبط با حواله">
+            <NativeSelect name="customer_id" defaultValue={car.buyer_customer_id ?? ""}>
+              <option value="">انتخاب مشتری (اختیاری)</option>
+              {customers.map((customer) => <option key={customer.id} value={customer.id}>{customer.name}</option>)}
+            </NativeSelect>
+          </Field>
+          <Button>ذخیره مشتری حواله</Button>
+        </form>
+      )}
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Stat label="قیمت خرید" value={toman(car.purchase_price)} />
         <Stat label="هزینه‌های جانبی" value={toman(carExpensesTotal(id, exps))} />
@@ -257,12 +320,22 @@ function CarDetail() {
             <option value="sold">فروخته‌شده</option>
           </NativeSelect>
         </Field>
-        <Field label="قیمت خرید"><Input name="purchase_price" defaultValue={car.purchase_price} inputMode="numeric" /></Field>
-        <Field label="قیمت فروش"><Input name="sale_price" defaultValue={car.sale_price ?? ""} inputMode="numeric" /></Field>
+        <Field label="قیمت خرید"><AmountInput name="purchase_price" defaultValue={car.purchase_price} /></Field>
+        <Field label="قیمت فروش"><AmountInput name="sale_price" defaultValue={car.sale_price ?? ""} /></Field>
         <Field label="تاریخ فروش"><JalaliDateField name="sale_date" defaultValue={car.sale_date ?? ""} key={car.id + (car.sale_date ?? "")} /></Field>
         <Button>ذخیره معامله</Button>
+        {car.status === "sold" && <div className="col-span-2 md:col-span-5 rounded-lg border bg-muted/40 p-3 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-muted-foreground">وضعیت وصول مبلغ فروش</span>
+            <strong className={receivable?.outstanding === 0 ? "text-success" : receivable?.received ? "text-amber-600" : "text-destructive"}>
+              {receivable === null ? "در حال بررسی…" : receivable.outstanding === 0 ? (receivable.adjusted > 0 ? "تسویه‌شده با وصول و تعدیل" : "وصول‌شده") : receivable.received > 0 ? "وصول بخشی" : "وصول‌نشده"}
+            </strong>
+          </div>
+          {receivable && <div className="mt-1 text-xs text-muted-foreground">وصول: {toman(receivable.received)} · تعدیل: {toman(receivable.adjusted)} · مانده: {toman(receivable.outstanding)}</div>}
+          <p className="mt-1 text-xs text-muted-foreground">این وضعیت از دریافت‌ها و تعدیل‌های ثبت‌شده محاسبه می‌شود؛ برای تغییر آن، دریافت یا تعدیل را در بخش مالی ثبت کنید.</p>
+        </div>}
         {mayViewCustomers && <div className="col-span-2 md:col-span-5 space-y-2">
-          <Field label="مشتری خریدار">
+          <Field label="مشتری مرتبط با خودرو">
             <NativeSelect name="buyer_customer_id" defaultValue={car.buyer_customer_id ?? ""}>
               <option value="">انتخاب مشتری (اختیاری)</option>
               {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -272,8 +345,8 @@ function CarDetail() {
             <summary className="cursor-pointer text-sm">افزودن مشتری جدید</summary>
             <div className="mt-3 grid gap-2 sm:grid-cols-3">
               <Field label="نام مشتری"><Input name="new_customer_name" /></Field>
-              <Field label="تلفن"><Input name="new_customer_phone" inputMode="tel" /></Field>
-              <Field label="کد ملی"><Input name="new_customer_national_id" inputMode="numeric" /></Field>
+              <Field label="تلفن"><Input name="new_customer_phone" inputMode="tel" dir="ltr" /></Field>
+              <Field label="کد ملی"><Input name="new_customer_national_id" inputMode="numeric" dir="ltr" /></Field>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">در صورت واردکردن کد ملی تکراری، مشتری موجود انتخاب می‌شود.</p>
           </details>}
@@ -283,7 +356,7 @@ function CarDetail() {
 
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="card-elevated p-4">
-          <div className="font-bold mb-1">سرمایه و سهم سود شرکا</div>
+          <div className="font-bold mb-1">سرمایه و سهم سود مشتریان سرمایه‌گذار</div>
           <div className="text-xs text-muted-foreground mb-3">مجموع سرمایه: {toman(capitalTotal)}</div>
           <div className="grid gap-3 sm:grid-cols-2">
             {ledger.map((s) => {
@@ -299,7 +372,7 @@ function CarDetail() {
                   <div className="flex items-center justify-between gap-2 border-b pb-2 mb-1">
                     <span className="font-bold truncate">{pName(s.partner_id)}</span>
                     {perms.edit_car && (
-                      <button aria-label="حذف شریک" className="shrink-0 p-1" onClick={() => run(supabase.from("car_investments").delete().eq("id", inv.id), "حذف شد")}>
+                      <button aria-label="حذف سرمایه‌گذار" className="shrink-0 p-1" onClick={() => run(supabase.from("car_investments").delete().eq("id", inv.id), "حذف شد")}>
                         <Trash2 className="size-4 text-muted-foreground" />
                       </button>
                     )}
@@ -332,17 +405,20 @@ function CarDetail() {
             </div>
           )}
           {invs.length === 0 && <div className="text-sm text-muted-foreground py-2">هنوز سرمایه‌ای ثبت نشده.</div>}
-          {perms.edit_car && car.ownership_type === "shared" && (
+          {perms.edit_car && (
             <>
-              <form onSubmit={addInvestment} className="grid grid-cols-[1fr_1fr_auto] gap-2 mt-4">
-                <NativeSelect name="partner" required>
-                  <option value="">انتخاب شریک</option>
-                  {d.partners.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              <form onSubmit={addInvestment} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 mt-4">
+                <NativeSelect name="customer" required>
+                  <option value="">انتخاب مشتری سرمایه‌گذار</option>
+                  {d.customers.map((customer) => {
+                    const capital = customerInvestorSummary(customer.id, { ...d, partners: d.partners as Array<any> }).currentCapital;
+                    return <option key={customer.id} value={customer.id}>{customer.name} · سرمایهٔ جاری {toman(capital)}</option>;
+                  })}
                 </NativeSelect>
-                <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
+                <AmountInput name="amount" placeholder="مبلغ (تومان)" required />
                 <Button size="sm">افزودن / ویرایش</Button>
               </form>
-              <div className="text-[11px] text-muted-foreground mt-1">مانده = سرمایه + سهم سود یا زیان − تسویه‌های همین خودرو. برای ویرایش سرمایه روی مبلغ بزنید.</div>
+              <div className="text-[11px] text-muted-foreground mt-1">انتخاب مشتری در این بخش، مبلغ سرمایه را به پروفایل او پیوند می‌دهد. برای ویرایش مبلغ ثبت‌شده روی سرمایه بزنید.</div>
             </>
           )}
         </div>
@@ -367,7 +443,7 @@ function CarDetail() {
           {perms.add_expense && (
             <form onSubmit={addExpense} className="grid grid-cols-2 gap-2 mt-4">
               <Input name="title" placeholder="عنوان هزینه" required />
-              <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
+              <AmountInput name="amount" placeholder="مبلغ (تومان)" required />
               <JalaliDateField name="date" defaultValue={todayIso()} />
               <Input name="description" placeholder="توضیح" />
               <Button size="sm" className="col-span-2">افزودن هزینه</Button>
@@ -377,7 +453,7 @@ function CarDetail() {
       </div>
 
       <div className="card-elevated p-4">
-        <div className="font-bold mb-3">پرداخت‌ها و تسویه با شرکا (سابقه)</div>
+        <div className="font-bold mb-3">پرداخت‌ها و تسویه با سرمایه‌گذاران</div>
         <div className="divide-y text-sm">
           {carTxns.map((t) => (
             <div key={t.id} className="flex justify-between py-2">
@@ -390,14 +466,14 @@ function CarDetail() {
         {(perms.add_payment || perms.manage_settlements) && (
           <form onSubmit={addSettlement} className="grid grid-cols-2 md:grid-cols-6 gap-2 mt-4">
             <NativeSelect name="partner" required>
-              <option value="">شریک</option>
+              <option value="">مشتری سرمایه‌گذار</option>
               {invs.map((i) => <option key={i.partner_id} value={i.partner_id}>{pName(i.partner_id)}</option>)}
             </NativeSelect>
             <NativeSelect name="type" defaultValue={perms.manage_settlements ? "settlement" : "payment"}>
-              {perms.manage_settlements && <option value="settlement">تسویه شریک</option>}
+              {perms.manage_settlements && <option value="settlement">تسویه سرمایه‌گذار</option>}
               {perms.add_payment && <option value="payment">پرداخت</option>}
             </NativeSelect>
-            <Input name="amount" placeholder="مبلغ (تومان)" inputMode="numeric" required />
+            <AmountInput name="amount" placeholder="مبلغ (تومان)" required />
             <JalaliDateField name="date" defaultValue={todayIso()} />
             <Input name="description" placeholder="توضیح" />
             <Button size="sm">ثبت</Button>

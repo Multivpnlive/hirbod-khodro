@@ -14,7 +14,7 @@ import { InstallAppButton } from "@/components/ProgressiveWebApp";
 const coreNav = [
   { to: "/dashboard", label: "داشبورد", icon: LayoutDashboard },
   { to: "/cars", label: "خودروها", icon: Car },
-  { to: "/partners", label: "شرکا", icon: Users },
+  { to: "/customers", label: "مشتریان", icon: UserRound },
   { to: "/transactions", label: "تراکنش‌ها", icon: Wallet },
   { to: "/reports", label: "گزارش‌ها", icon: FileBarChart },
 ] as const;
@@ -23,7 +23,6 @@ const accountNav = [
   { to: "/account", label: "حساب کاربری", icon: Settings },
 ] as const;
 const featureNav = [
-  { to: "/customers", label: "مشتریان", icon: UserRound },
   { to: "/receivables", label: "مطالبات فروش", icon: HandCoins },
   { to: "/fund-transfers", label: "انتقال وجه", icon: ArrowLeftRight },
 ] as const;
@@ -37,7 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const userName = String(me?.user.user_metadata?.full_name ?? me?.user.email?.split("@")[0] ?? "کاربر");
-  const roleLabel = me?.isAdmin ? "مدیر اصلی" : me?.staffRole === "finance_manager" ? "مدیر مالی" : me?.staffRole === "sales" ? "فروشنده" : me?.staffRole === "limited" ? "کاربر محدود" : "شریک مالی";
+  const roleLabel = me?.isAdmin ? "مدیر اصلی" : me?.staffRole === "finance_manager" ? "مدیر مالی" : me?.staffRole === "sales" ? "فروشنده" : me?.staffRole === "limited" ? "کاربر محدود" : "کاربر مالی";
   const staffFeatureNav = featureNav.filter((item) => {
     if (item.to === "/customers") return perms.view_customers;
     if (item.to === "/receivables") return perms.view_receivables;
@@ -50,14 +49,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     : [
         ...(hasAnyAccess ? [{ to: "/dashboard", label: "داشبورد", icon: LayoutDashboard }] : []),
         ...((perms.view_all_cars || perms.create_car || perms.edit_car) ? [{ to: "/cars", label: "خودروها", icon: Car }] : []),
-        ...(perms.view_all_partners ? [{ to: "/partners", label: "شرکا", icon: Users }] : []),
+        ...(perms.view_customers ? [{ to: "/customers", label: "مشتریان", icon: UserRound }] : []),
         ...((perms.view_transactions || perms.add_payment || perms.manage_settlements) ? [{ to: "/transactions", label: "تراکنش‌ها", icon: Wallet }] : []),
         ...(hasAnyAccess ? [{ to: "/reports", label: "گزارش‌ها", icon: FileBarChart }] : []),
         ...staffFeatureNav,
         ...accountNav,
       ];
   const desktopNav = nav.filter((n) => n.to !== "/account");
-  const mobileNav = nav.filter((n) => ["/dashboard", "/cars", "/partners", "/transactions"].includes(n.to)).slice(0, 4);
+  const mobileNav = nav.filter((n) => ["/dashboard", "/cars", "/customers", "/transactions"].includes(n.to)).slice(0, 4);
   const showMoreActive = [...featureNav, ...accountNav].some((n) => pathname.startsWith(n.to));
 
   async function signOut() {
@@ -175,13 +174,14 @@ export function PageHeader({ title, action }: { title: string; action?: ReactNod
   );
 }
 
-export function Stat({ label, value, tone }: { label: string; value: string; tone?: "pos" | "neg" | undefined }) {
+export function Stat({ label, value, tone, description }: { label: string; value: string; tone?: "pos" | "neg" | undefined; description?: string }) {
   return (
     <div className="card-elevated p-4">
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className={`mt-2 text-lg md:text-xl font-bold ${tone === "pos" ? "text-success" : tone === "neg" ? "text-destructive" : ""}`}>
         {value}
       </div>
+      {description && <div className="mt-1 text-[11px] leading-5 text-muted-foreground">{description}</div>}
     </div>
   );
 }

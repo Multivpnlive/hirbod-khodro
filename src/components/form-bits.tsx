@@ -1,5 +1,6 @@
 import type { ReactNode, SelectHTMLAttributes } from "react";
 import { Label } from "@/components/ui/label";
+import { toEnglishDigits } from "@/lib/feature-utils";
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -30,4 +31,8 @@ export function StatusBadge({ status }: { status: string }) {
   return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>{label}</span>;
 }
 
-export const num = (v: FormDataEntryValue | null) => Number(String(v ?? "").replace(/[^\d.-]/g, "")) || 0;
+export const num = (v: FormDataEntryValue | null) => {
+  const normalized = toEnglishDigits(String(v ?? "")).replace(/[^\d.-]/g, "");
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : 0;
+};

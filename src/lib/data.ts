@@ -8,6 +8,15 @@ export type Expense = Database["public"]["Tables"]["car_expenses"]["Row"];
 export type Investment = Database["public"]["Tables"]["car_investments"]["Row"];
 export type Txn = Database["public"]["Tables"]["transactions"]["Row"];
 export type PartnerPermissions = Database["public"]["Tables"]["partner_permissions"]["Row"];
+export type Customer = {
+  id: string;
+  name: string;
+  phone: string | null;
+  national_id: string | null;
+  notes: string | null;
+  is_demo: boolean;
+  created_at: string;
+};
 
 export function useMe() {
   return useQuery({
@@ -184,14 +193,15 @@ export function useAllData() {
   const q = useQuery({
     queryKey: ["all-data"],
     queryFn: async () => {
-      const [cars, partners, expenses, investments, txns] = await Promise.all([
-        supabase.from("cars").select("*").order("purchase_date", { ascending: false }),
+      const [cars, partners, expenses, investments, txns, customers] = await Promise.all([
+        supabase.from("cars").select("*").order("created_at", { ascending: false }),
         supabase.from("partners").select("*").order("created_at"),
         supabase.from("car_expenses").select("*").order("expense_date", { ascending: false }),
         supabase.from("car_investments").select("*"),
         supabase.from("transactions").select("*").order("txn_date", { ascending: false }),
+        (supabase as any).from("customers").select("id,name,phone,national_id,notes,is_demo,created_at").order("created_at", { ascending: false }),
       ]);
-      const err = cars.error || partners.error || expenses.error || investments.error || txns.error;
+      const err = cars.error || partners.error || expenses.error || investments.error || txns.error || customers.error;
       if (err) throw err;
       return {
         cars: cars.data!,
@@ -199,6 +209,7 @@ export function useAllData() {
         expenses: expenses.data!,
         investments: investments.data!,
         txns: txns.data!,
+        customers: customers.data! as Customer[],
       };
     },
   });
@@ -210,6 +221,7 @@ export function useAllData() {
     expenses: f(q.data?.expenses),
     investments: f(q.data?.investments),
     txns: f(q.data?.txns),
+    customers: f(q.data?.customers),
   };
 }
 

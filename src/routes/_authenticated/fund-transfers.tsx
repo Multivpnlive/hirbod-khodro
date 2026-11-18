@@ -7,6 +7,8 @@ import { JalaliDateField } from "@/components/JalaliDateField";
 import { usePerms } from "@/lib/data";
 import { amountValue, errorText, faMoney, faNumber } from "@/lib/feature-utils";
 import { todayIso } from "@/lib/jalali";
+import { AmountInput } from "@/components/AmountInput";
+import { faDate } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/fund-transfers")({
   head: () => ({ meta: [{ title: "انتقال وجه امانی | هیربد خودرو" }] }),
@@ -61,11 +63,11 @@ function FundTransfersPage() {
   if (!isAdmin) return <div className="space-y-3"><PageHeader title="انتقال وجه امانی" /><p className="rounded-lg border p-4">مشاهده و انتقال وجوه امانی فقط برای مدیر مجاز است.</p></div>;
   return <div className="space-y-5" dir="rtl">
     <PageHeader title="انتقال از امانی مشتری به کسب‌وکار" />
-    <div className="rounded-xl border bg-card p-4 text-sm leading-7 text-muted-foreground">این عملیات پول جدیدی ایجاد نمی‌کند: مانده امانی مشتری را کاهش می‌دهد و همان مبلغ را به وجوه قابل‌استفاده کسب‌وکار تخصیص می‌دهد. از این مسیر برای واریز فیزیکی جدید استفاده نکن؛ واریز فیزیکی باید یک تراکنش `receipt` با `fund=custody` باشد.</div>
+    <div className="rounded-xl border bg-card p-4 text-sm leading-7 text-muted-foreground">این انتقال پول تازه‌ای دریافت نمی‌کند. مبلغی را که قبلاً به امانت مشتری ثبت شده از مانده امانی کم می‌کند و برای استفادهٔ کسب‌وکار در دسترس می‌گذارد. اگر مشتری اکنون پول واریز کرده، آن را در «تراکنش‌ها» به‌عنوان دریافت از صندوق امانی ثبت کن.</div>
     <form onSubmit={createTransfer} className="grid gap-3 rounded-xl border bg-card p-4 md:grid-cols-2 xl:grid-cols-3">
       <h2 className="font-semibold md:col-span-2 xl:col-span-3">ثبت انتقال</h2>
       <label className="grid gap-1 text-sm">مشتری<select name="customer_id" required className="rounded-md border bg-background px-3 py-2"><option value="">انتخاب مشتری</option>{customers.map((c) => <option key={c.id} value={c.id}>{c.name} · مانده {faMoney(custodyBalance(c.id))}</option>)}</select></label>
-      <label className="grid gap-1 text-sm">مبلغ انتقال (تومان)<input name="amount" inputMode="numeric" required className="rounded-md border bg-background px-3 py-2" /></label>
+      <label className="grid gap-1 text-sm">مبلغ انتقال (تومان)<AmountInput name="amount" required /></label>
       <label className="grid gap-1 text-sm">هدف تخصیص<select name="target" className="rounded-md border bg-background px-3 py-2"><option value="business">وجوه عمومی کسب‌وکار</option><option value="business_commission">کارمزد واسطه‌گری</option><option value="business_expense">هزینه کسب‌وکار</option><option value="other">سایر</option></select></label>
       <label className="grid gap-1 text-sm">تاریخ<JalaliDateField name="date" defaultValue={todayIso()} /></label>
       <label className="grid gap-1 text-sm md:col-span-2">شرح<input name="notes" className="rounded-md border bg-background px-3 py-2" /></label>
@@ -75,7 +77,7 @@ function FundTransfersPage() {
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{customers.map((c) => <article key={c.id} className="rounded-xl border bg-card p-4"><div className="font-semibold">{c.name}</div><div className="mt-2 text-xl font-bold">{faMoney(custodyBalance(c.id))}</div><div className="text-xs text-muted-foreground">مانده پس از کسر انتقال‌های قبلی</div></article>)}</div>
     </section>
     <section className="space-y-3"><h2 className="font-semibold">تاریخچه انتقال‌ها ({faNumber(transfers.length)})</h2>
-      <div className="divide-y rounded-xl border bg-card">{transfers.map((t) => <div key={t.id} className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm"><div><div className="font-medium">{customers.find((c) => c.id === t.customer_id)?.name ?? "مشتری"} · {t.target}</div><div className="text-xs text-muted-foreground">{t.transfer_date} · {t.notes || "بدون شرح"}</div></div><b>{faMoney(t.amount)}</b></div>)}{transfers.length === 0 && <p className="p-4 text-sm text-muted-foreground">هنوز انتقالی ثبت نشده است.</p>}</div>
+      <div className="divide-y rounded-xl border bg-card">{transfers.map((t) => <div key={t.id} className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm"><div><div className="font-medium">{customers.find((c) => c.id === t.customer_id)?.name ?? "مشتری"} · {t.target}</div><div className="text-xs text-muted-foreground">{faDate(t.transfer_date)} · {t.notes || "بدون شرح"}</div></div><b>{faMoney(t.amount)}</b></div>)}{transfers.length === 0 && <p className="p-4 text-sm text-muted-foreground">هنوز انتقالی ثبت نشده است.</p>}</div>
     </section>
   </div>;
 }
