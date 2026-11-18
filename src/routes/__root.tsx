@@ -99,8 +99,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/hirbod-favicon.svg", type: "image/svg+xml" },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/pwa-icon-256.png" },
-      { rel: "preconnect", href: "https://cdn.jsdelivr.net" },
-      { rel: "stylesheet", href: "https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css" },
     ],
   }),
   shellComponent: RootShell,
@@ -135,6 +133,18 @@ function RootComponent() {
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
+
+  // Load the optional web font after the app has rendered. A slow or blocked
+  // third-party CDN must not hold the first paint of every page.
+  useEffect(() => {
+    const href = "https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/Vazirmatn-font-face.css";
+    if (document.querySelector(`link[rel="stylesheet"][href="${href}"]`)) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    link.crossOrigin = "anonymous";
+    document.head.append(link);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
