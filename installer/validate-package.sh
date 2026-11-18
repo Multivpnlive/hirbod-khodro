@@ -49,6 +49,7 @@ need_file installer/install-backup-units.sh
 need_file installer/configure-telegram.py
 need_file installer/bootstrap-admin.py
 need_file installer/apply-migrations.sh
+need_file installer/apply-update-migrations.sh
 need_file scripts/build.mjs
 need_file scripts/telegram_backup.py
 need_file src/routes/api/backup/restore.ts
