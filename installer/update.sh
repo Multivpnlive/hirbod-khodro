@@ -193,6 +193,8 @@ done
 [[ -f /etc/systemd/system/hirbod-app.service ]] || die "App systemd unit missing"
 [[ -d "$APP/drizzle/migrations" && -d "$SOURCE/drizzle/migrations" ]] ||
   die "Migration directory missing"
+[[ -f "$SOURCE/installer/apply-update-migrations.sh" ]] ||
+  die "Update migration runner missing"
 [[ -f /opt/hirbod/supabase-project/docker-compose.yml ]] ||
   die "Active Supabase project missing"
 
@@ -217,8 +219,7 @@ systemctl is-active --quiet caddy ||
 command -v rsync >/dev/null || die "rsync is required"
 command -v curl >/dev/null || die "curl is required"
 
-diff -qr "$APP/drizzle/migrations" "$SOURCE/drizzle/migrations" >/dev/null ||
-  die "Migration files differ. Database migration requires a separate reviewed step."
+bash "$SOURCE/installer/apply-update-migrations.sh" "$SOURCE" preflight
 
 LOCAL_BASELINE=$(http_code http://127.0.0.1:3000/)
 PUBLIC_BASELINE=$(http_code "$HEALTH_URL")
@@ -250,7 +251,7 @@ echo "Commit:        $COMMIT_ID"
 echo "Node:          $ACTUAL_NODE"
 echo "Local health:  HTTP $LOCAL_BASELINE"
 echo "Public health: HTTP $PUBLIC_BASELINE"
-echo "Migrations:    unchanged"
+echo "Migrations:    pending changes will be backed up and applied automatically"
 echo "Supabase:      will not be modified"
 echo "Caddy:         will not be modified"
 echo "======================================"
@@ -335,6 +336,10 @@ systemctl stop "$SERVICE"
 SERVICE_STOPPED=1
 sleep 2
 assert_no_restore
+
+echo "[INFO] Applying release database migrations with a verified database backup..."
+bash "$SOURCE/installer/apply-update-migrations.sh" \
+  "$SOURCE" apply "$BACKUP/database-before-migrations.dump"
 
 mv "$APP" "$BACKUP/app"
 SWAPPED=1
