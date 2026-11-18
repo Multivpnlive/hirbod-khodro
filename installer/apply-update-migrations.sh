@@ -87,7 +87,7 @@ trap 'rm -f "$TEMP_BACKUP"' EXIT
 echo "[INFO] Creating a private PostgreSQL backup before migrations..."
 db_exec pg_dump -U postgres -d postgres -Fc > "$TEMP_BACKUP" || die "PostgreSQL backup failed; no migrations were applied"
 [[ -s "$TEMP_BACKUP" ]] || die "PostgreSQL backup is empty"
-db_exec pg_restore --list - < "$TEMP_BACKUP" >/dev/null || die "PostgreSQL backup verification failed"
+db_exec pg_restore --list < "$TEMP_BACKUP" >/dev/null || die "PostgreSQL backup verification failed"
 chmod 600 "$TEMP_BACKUP"
 mv "$TEMP_BACKUP" "$BACKUP_FILE"
 echo "[PASS] Verified database backup: $BACKUP_FILE"
