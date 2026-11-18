@@ -29,14 +29,19 @@ db_exec() {
 db_psql -Atqc 'SELECT 1' >/dev/null || die "PostgreSQL is not ready"
 
 # An update may add migrations, but it must never silently rewrite or remove
-# migrations that shipped with the installed release.
+# migrations that shipped with the installed release. Some older installations
+# predate reliable filesystem markers; matching migrations in the running app
+# are the installed schema baseline and are never replayed here.
+LEGACY_UNMARKED=()
 while IFS= read -r -d '' installed_file; do
   name=${installed_file##*/}
   release_file="$SOURCE/drizzle/migrations/$name"
   [[ -f "$release_file" ]] || die "Release removed installed migration $name"
   cmp -s "$installed_file" "$release_file" || die "Installed migration differs from release: $name"
   prefix=${name%%_*}
-  [[ -f "$STATE_DIR/$prefix.done" ]] || die "Migration $prefix has no completion marker; refusing automatic update"
+  if [[ ! -f "$STATE_DIR/$prefix.done" ]]; then
+    LEGACY_UNMARKED+=("$name")
+  fi
 done < <(find "$APP/drizzle/migrations" -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' -print0 | sort -z)
 
 mapfile -t RELEASE_MIGRATIONS < <(find "$SOURCE/drizzle/migrations" -maxdepth 1 -type f -name '[0-9][0-9][0-9][0-9]_*.sql' | sort)
@@ -52,9 +57,14 @@ for file in "${RELEASE_MIGRATIONS[@]}"; do
   EXPECTED=$((EXPECTED + 1))
 
   if [[ ! -f "$STATE_DIR/$prefix.done" ]]; then
-    [[ ! -f "$APP/drizzle/migrations/$name" ]] || die "Installed migration $name is missing its completion marker"
-    PENDING+=("$file")
+    if [[ ! -f "$APP/drizzle/migrations/$name" ]]; then
+      PENDING+=("$file")
+    fi
   fi
+done
+
+for name in "${LEGACY_UNMARKED[@]}"; do
+  echo "[INFO] Installed migration $name has no marker; treating the active app schema as the baseline and not replaying it."
 done
 
 if ((${#PENDING[@]} == 0)); then
