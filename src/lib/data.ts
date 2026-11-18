@@ -21,6 +21,7 @@ export type Customer = {
 export function useMe() {
   return useQuery({
     queryKey: ["me"],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return null;
@@ -117,6 +118,7 @@ export function usePerms() {
   const q = useQuery({
     queryKey: ["my-perms"],
     enabled: !!me.data && !isAdmin,
+    staleTime: 60_000,
     queryFn: async (): Promise<{ perms: Perms; staffAccess: StaffAccessMap }> => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return { perms: NO_PERMS, staffAccess: emptyStaffAccess() };
@@ -192,6 +194,8 @@ export function usePerms() {
 export function useAllData() {
   const q = useQuery({
     queryKey: ["all-data"],
+    staleTime: 30_000,
+    retry: 1,
     queryFn: async () => {
       const [cars, partners, expenses, investments, txns, customers] = await Promise.all([
         supabase.from("cars").select("*").order("created_at", { ascending: false }),

@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PageHeader, Stat } from "@/components/AppShell";
-import { useAllData } from "@/lib/data";
 import { carProfit } from "@/lib/finance";
 import { businessCashBalance } from "@/lib/extended-finance";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,16 +15,35 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function Dashboard() {
-  const { cars, expenses, investments, txns, isLoading } = useAllData();
-  const [transfers, setTransfers] = useState<Array<{ amount: number; target: string; is_demo: boolean }>>([]);
-
-  useEffect(() => {
-    let active = true;
-    void supabase.from("fund_transfers").select("amount,target,is_demo").then(({ data, error }) => {
-      if (active && !error) setTransfers(data ?? []);
-    });
-    return () => { active = false; };
-  }, []);
+  const dashboardQuery = useQuery({
+    queryKey: ["dashboard-data"],
+    staleTime: 30_000,
+    retry: 1,
+    queryFn: async () => {
+      // The dashboard needs only these summary fields. Avoid loading every column,
+      // partner, and customer record just to render the first screen.
+      const [cars, expenses, investments, txns, transfers] = await Promise.all([
+        supabase.from("cars").select("id,brand,model,purchase_price,sale_price,status,purchase_date,sale_date,is_demo"),
+        supabase.from("car_expenses").select("car_id,amount,is_demo"),
+        supabase.from("car_investments").select("amount,is_demo"),
+        supabase.from("transactions").select("type,amount,fund,is_demo"),
+        supabase.from("fund_transfers").select("amount,target,is_demo"),
+      ]);
+      const error = cars.error || expenses.error || investments.error || txns.error || transfers.error;
+      if (error) throw error;
+      const realRows = <T extends { is_demo: boolean | null }>(rows: T[]) => rows.filter((row) => !row.is_demo);
+      return {
+        cars: realRows(cars.data ?? []),
+        expenses: realRows(expenses.data ?? []),
+        investments: realRows(investments.data ?? []),
+        txns: realRows(txns.data ?? []),
+        transfers: realRows(transfers.data ?? []),
+      };
+    },
+  });
+  const { cars, expenses, investments, txns, transfers } = dashboardQuery.data ?? {
+    cars: [], expenses: [], investments: [], txns: [], transfers: [],
+  };
 
   const s = useMemo(() => {
     const capital = investments.reduce((a, i) => a + Number(i.amount), 0);
@@ -44,7 +63,7 @@ function Dashboard() {
     return { capital, tradeValue, profit, cash: businessCashBalance(txns, transfers), monthly, statuses, profits };
   }, [cars, expenses, investments, txns, transfers]);
 
-  if (isLoading) return <div className="text-muted-foreground">در حال بارگذاری…</div>;
+  if (dashboardQuery.isLoading) return <div className="text-muted-foreground">در حال بارگذاری…</div>;
   const colors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-5))"];
 
   return (

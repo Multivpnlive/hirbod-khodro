@@ -46,7 +46,7 @@ export function useBranding() {
         logo_url: data?.logo_path ? publicLogoPath(data.logo_path) : data?.logo_url ?? null,
       } as AppBranding;
     },
-    staleTime: 0,
+    staleTime: 60_000,
     retry: 1,
   });
 
