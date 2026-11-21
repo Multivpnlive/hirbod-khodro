@@ -10,7 +10,7 @@ Group=hirbod-mailer
 WorkingDirectory=/opt/hirbod-mailer
 EnvironmentFile=/etc/hirbod-mailer/secrets.env
 Environment=NODE_ENV=production
-ExecStart=/usr/bin/node /opt/hirbod-mailer/server.mjs
+ExecStart=/usr/local/lib/hirbod-mailer/node /opt/hirbod-mailer/server.mjs
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true
