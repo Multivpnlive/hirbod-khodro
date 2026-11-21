@@ -176,22 +176,27 @@ tmp.replace(path)
 PYENV
 
 python3 - "$COMPOSE_FILE" <<'PYCOMPOSE'
-import pathlib, re, sys
+import pathlib, re, sys, subprocess
+gateway = subprocess.check_output(
+    ["docker", "network", "inspect", "supabase_default", "--format", "{{(index .IPAM.Config 0).Gateway}}"],
+    text=True
+).strip()
 path = pathlib.Path(sys.argv[1]); lines = path.read_text(encoding="utf-8").splitlines()
 try: start = next(i for i,line in enumerate(lines) if line == "  auth:")
 except StopIteration: raise SystemExit("Supabase auth service was not found")
 end = next((i for i in range(start+1,len(lines)) if re.match(r"^  [A-Za-z0-9_-]+:", lines[i])),len(lines))
 block = lines[start:end]
-host_line = next((i for i,line in enumerate(block) if "host.docker.internal:" in line),None)
+hosts_start = next((i for i,line in enumerate(block) if re.match(r"^    extra_hosts:",line)),None)
+host_line = next((i for i,line in enumerate(block) if hosts_start is not None and i > hosts_start and re.match(r"^      - .*host\.docker\.internal:",line)),None)
 if host_line is not None:
-    block[host_line] = '      - "host.docker.internal:host-gateway"'
+    block[host_line] = f'      - "host.docker.internal:{gateway}"'
 elif not any(re.match(r"^    extra_hosts:",line) for line in block):
     restart = next((i for i,line in enumerate(block) if re.match(r"^    restart:",line)),None)
     if restart is None: raise SystemExit("Cannot safely place the Docker host mapping")
-    block[restart+1:restart+1] = ["    extra_hosts:", '      - "host.docker.internal:host-gateway"']
+    block[restart+1:restart+1] = ["    extra_hosts:", f'      - "host.docker.internal:{gateway}"']
 else:
-    hosts = next(i for i,line in enumerate(block) if re.match(r"^    extra_hosts:",line))
-    block.insert(hosts+1, '      - "host.docker.internal:host-gateway"')
+    hosts = hosts_start
+    block.insert(hosts+1, f'      - "host.docker.internal:{gateway}"')
 keys = {
  "GOTRUE_HOOK_SEND_EMAIL_ENABLED": "${GOTRUE_HOOK_SEND_EMAIL_ENABLED:-false}",
  "GOTRUE_HOOK_SEND_EMAIL_URI": "${GOTRUE_HOOK_SEND_EMAIL_URI:-http://host.docker.internal:8787/hooks/send-email}",
@@ -228,7 +233,7 @@ for attempt in $(seq 1 60); do
 done
 (( auth_healthy )) || die "Supabase Auth did not become healthy after configuration"
 
-gateway="$(docker exec supabase-auth awk '$2 == "host.docker.internal" {print $1; exit}' /etc/hosts | head -n1)"
+gateway="$(docker network inspect supabase_default --format '{{(index .IPAM.Config 0).Gateway}}')"
 python3 - "$gateway" <<'PYIP'
 import ipaddress,sys
 try: ipaddress.IPv4Address(sys.argv[1])
@@ -251,7 +256,7 @@ curl -fsS --max-time 3 "http://$gateway:8787/health" >/dev/null || die "Mailer h
 docker exec supabase-auth wget -qO- -T 4 http://host.docker.internal:8787/health >/dev/null ||
   die "Supabase Auth cannot reach the email service"
 systemctl is-active --quiet hirbod-app.service || die "Application service is not active"
-docker inspect supabase-auth --format '{{.State.Health.Status}}' | rg -q '^healthy$' ||
+docker inspect supabase-auth --format '{{.State.Health.Status}}' | grep -q '^healthy$' ||
   die "Supabase Auth did not return to healthy state"
 
 trap - EXIT
