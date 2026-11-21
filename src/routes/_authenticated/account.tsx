@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/AppShell";
 import { useMe } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -144,9 +145,9 @@ function AccountPage() {
         <section className="card-elevated p-5 sm:p-6">
           <div className="mb-5 flex items-center gap-3"><div className="grid size-10 place-items-center rounded-xl bg-accent text-accent-foreground"><LockKeyhole className="size-5" /></div><div><h2 className="font-bold">امنیت و رمز عبور</h2><p className="text-sm text-muted-foreground mt-1">برای تغییر رمز، ابتدا رمز فعلی را تأیید کنید.</p></div></div>
           <form className="space-y-4" onSubmit={changePassword}>
-            <div className="space-y-2"><Label htmlFor="current-password">رمز عبور فعلی</Label><Input id="current-password" type="password" autoComplete="current-password" dir="ltr" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></div>
-            <div className="space-y-2"><Label htmlFor="new-password">رمز عبور جدید</Label><Input id="new-password" type="password" autoComplete="new-password" dir="ltr" minLength={8} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /><p className="text-xs text-muted-foreground">حداقل 8 نویسه انتخاب کنید.</p></div>
-            <div className="space-y-2"><Label htmlFor="confirm-password">تکرار رمز جدید</Label><Input id="confirm-password" type="password" autoComplete="new-password" dir="ltr" minLength={8} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></div>
+            <div className="space-y-2"><Label htmlFor="current-password">رمز عبور فعلی</Label><PasswordInput id="current-password" autoComplete="current-password" dir="ltr" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></div>
+            <div className="space-y-2"><Label htmlFor="new-password">رمز عبور جدید</Label><PasswordInput id="new-password" autoComplete="new-password" dir="ltr" minLength={8} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /><p className="text-xs text-muted-foreground">حداقل 8 نویسه انتخاب کنید.</p></div>
+            <div className="space-y-2"><Label htmlFor="confirm-password">تکرار رمز جدید</Label><PasswordInput id="confirm-password" autoComplete="new-password" dir="ltr" minLength={8} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required /></div>
             <Button type="submit" className="w-full" disabled={passwordBusy}><KeyRound className="size-4" />{passwordBusy ? "در حال تغییر…" : "تغییر رمز عبور"}</Button>
           </form>
         </section>
