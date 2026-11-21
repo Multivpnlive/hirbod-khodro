@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/PasswordInput";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useBranding } from "@/lib/branding";
 
@@ -252,9 +253,8 @@ function Reset() {
               <label htmlFor="new-staff-password" className="text-sm font-medium">
                 رمز عبور جدید
               </label>
-              <Input
+              <PasswordInput
                 id="new-staff-password"
-                type="password"
                 autoComplete="new-password"
                 dir="ltr"
                 minLength={8}
