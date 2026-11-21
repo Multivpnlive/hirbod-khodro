@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Label } from "@/components/ui/label";
 import { useBranding } from "@/lib/branding";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -116,8 +117,8 @@ function AuthPage() {
         </div>
         {mode !== "forgot" && (
           <div className="space-y-2">
-            <Label>رمز عبور</Label>
-            <Input type="password" dir="ltr" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <Label htmlFor="auth-password">رمز عبور</Label>
+            <PasswordInput id="auth-password" dir="ltr" autoComplete="current-password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
         )}
         <Button className="auth-submit w-full" disabled={busy}>
