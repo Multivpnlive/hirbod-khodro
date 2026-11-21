@@ -144,6 +144,10 @@ printf 'RESEND_API_KEY=%s\nSEND_EMAIL_HOOK_SECRET=%s\nHIRBOD_MAIL_FROM=%s\nHIRBO
 chown root:hirbod-mailer "$tmp_env"
 chmod 0640 "$tmp_env"
 mv "$tmp_env" "$MAILER_ENV"
+NODE_SOURCE="$(command -v node)"
+[[ -x "$NODE_SOURCE" ]] || die "Node.js executable was not found"
+install -d -o root -g root -m 0755 /usr/local/lib/hirbod-mailer
+install -o root -g root -m 0755 "$NODE_SOURCE" /usr/local/lib/hirbod-mailer/node
 install -o root -g root -m 0644 "$SOURCE_ROOT/installer/templates/hirbod-mailer.service" "$MAILER_UNIT"
 
 export SETUP_MAIL_ENABLED=true
