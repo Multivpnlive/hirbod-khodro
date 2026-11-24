@@ -80,21 +80,41 @@ function CustomersPage() {
 
   async function deleteCustomer(customer: Customer) {
     if (!window.confirm(`مشتری «${customer.name}» حذف شود؟`)) return;
-    const [carRefs, transactionRefs, transferRefs, brokerageRefs] = await Promise.all([
+    const [carRefs, transactionRefs, transferRefs, brokerageRefs, hawalaRefs, linkedPartnerResult] = await Promise.all([
       db.from("cars").select("id", { count: "exact", head: true }).eq("buyer_customer_id", customer.id),
       db.from("transactions").select("id", { count: "exact", head: true }).eq("customer_id", customer.id),
       db.from("fund_transfers").select("id", { count: "exact", head: true }).eq("customer_id", customer.id),
       db.from("brokerage_deals").select("id", { count: "exact", head: true }).eq("customer_id", customer.id),
+      db.from("hawalas").select("id", { count: "exact", head: true }).eq("customer_id", customer.id),
+      db.from("partners").select("id").eq("customer_id", customer.id),
     ]);
-    const partnerRefs = await db.from("partners").select("id", { count: "exact", head: true }).eq("customer_id", customer.id);
-    const refError = carRefs.error || transactionRefs.error || transferRefs.error || brokerageRefs.error || partnerRefs.error;
+    const refError = carRefs.error || transactionRefs.error || transferRefs.error || brokerageRefs.error || hawalaRefs.error || linkedPartnerResult.error;
     if (refError) { toast.error(errorText(refError)); return; }
-    if ([carRefs.count, transactionRefs.count, transferRefs.count, brokerageRefs.count, partnerRefs.count].some((count) => (count ?? 0) > 0)) {
+    const partnerIds = (linkedPartnerResult.data ?? []).map((partner: { id: string }) => partner.id);
+    const partnerHistoryChecks = partnerIds.length ? await Promise.all([
+      db.from("car_investments").select("partner_id", { count: "exact", head: true }).in("partner_id", partnerIds),
+      db.from("hawala_investments").select("partner_id", { count: "exact", head: true }).in("partner_id", partnerIds),
+      db.from("transactions").select("id", { count: "exact", head: true }).in("partner_id", partnerIds),
+      db.from("commission_splits").select("partner_id", { count: "exact", head: true }).in("partner_id", partnerIds),
+    ]) : [];
+    const partnerHistoryError = partnerHistoryChecks.find((result) => result.error)?.error;
+    if (partnerHistoryError) { toast.error(errorText(partnerHistoryError)); return; }
+    const hasPartnerHistory = partnerHistoryChecks.some((result) => (result.count ?? 0) > 0);
+    if ([carRefs.count, transactionRefs.count, transferRefs.count, brokerageRefs.count, hawalaRefs.count].some((count) => (count ?? 0) > 0) || hasPartnerHistory) {
       toast.error("این مشتری در سابقهٔ خودرو یا امور مالی استفاده شده و برای حفظ سوابق قابل حذف نیست.");
       return;
     }
-    const { error } = await db.from("customers").delete().eq("id", customer.id);
+    const { data: deletedCustomer, error } = await db.from("customers")
+      .delete()
+      .eq("id", customer.id)
+      .select("id")
+      .maybeSingle();
     if (error) { toast.error(errorText(error)); return; }
+    if (!deletedCustomer) {
+      toast.error("مشتری حذف نشد؛ احتمالاً مجوز حذف در پایگاه داده برای حساب شما فعال نیست.");
+      await load();
+      return;
+    }
     toast.success("مشتری حذف شد");
     await load();
   }
