@@ -413,6 +413,7 @@ function AddAsset() {
             exps={exps}
             setExps={setExps}
             purchase={purchase}
+            allowInvestments={true}
           />
 
           <Button className="col-span-2">ذخیره خودرو</Button>

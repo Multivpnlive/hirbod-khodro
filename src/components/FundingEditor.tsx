@@ -15,7 +15,7 @@ export const today = todayIso;
 
 /** «سرمایه شرکا و هزینه‌ها» section used inside the new-car form. */
 export function FundingEditor({
-  customers, currentCapital = {}, invs, setInvs, exps, setExps, purchase,
+  customers, currentCapital = {}, invs, setInvs, exps, setExps, purchase, allowInvestments,
 }: {
   customers: Customer[];
   currentCapital?: Record<string, number>;
@@ -24,6 +24,7 @@ export function FundingEditor({
   exps: ExpRow[];
   setExps: (r: ExpRow[]) => void;
   purchase: number;
+  allowInvestments: boolean;
 }) {
   const capital = invs.reduce((s, r) => s + num(r.amount), 0);
   const expTotal = exps.reduce((s, r) => s + num(r.amount), 0);
